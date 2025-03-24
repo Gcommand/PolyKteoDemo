@@ -43,7 +43,7 @@ def search_patents():
     # Get query parameters
     query = request.args.get('query')
     limit = request.args.get('limit', default=20, type=int)
-    confidence_level = request.args.get('confidence_level', default=0.2, type=float)
+    confidence_level = request.args.get('confidence_level', default=0.4, type=float)
     
     # Validate confidence_level is between 0 and 1
     if confidence_level < 0 or confidence_level > 1:
@@ -73,7 +73,9 @@ def search_patents():
             .filter(PatentsList.embedding.is_not(None))
             # Apply confidence level filter directly in the query
             .filter(similarity_score >= confidence_level)
-            .order_by(PatentsList.embedding.cosine_distance(query_embedding))
+            .order_by(PatentsList.embedding.cosine_distance(query_embedding),
+                      similarity_score.desc()
+                      )
             .limit(limit)
             .all()
         )
