@@ -4,7 +4,7 @@ from typing import List
 from flask import Flask, request, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.postgres_embedding import PatentsList, get_embedding
+from src.postgres_embedding import PatentsList, get_embedding, update_embedding
 import asyncio
 
 # Create Flask app
@@ -43,7 +43,7 @@ def search_patents():
     # Get query parameters
     query = request.args.get('query')
     limit = request.args.get('limit', default=20, type=int)
-    confidence_level = request.args.get('confidence_level', default=0.4, type=float)
+    confidence_level = request.args.get('confidence_level', default=0.2, type=float)
     
     # Validate confidence_level is between 0 and 1
     if confidence_level < 0 or confidence_level > 1:
@@ -105,7 +105,7 @@ def search_patents():
         db.close()
 
 @app.route('/get_embedding', methods=['POST'])
-async def return_embedding() -> List[float]:
+async def run_get_embedding() -> List[float]:
     """Get embedding vector from OpenAI."""
     data = request.get_json()
     text = data.get('text')
@@ -118,7 +118,7 @@ async def return_embedding() -> List[float]:
         return [0] * 1536  # Return zero vector on error
 
 @app.route('/update_embedding', methods=['GET'])
-async def update_embedding():
+async def run_update_embedding():
     try:
         await update_embedding()
         return "Successfully updated embedding"
