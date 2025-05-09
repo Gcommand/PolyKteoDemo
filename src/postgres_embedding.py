@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from typing import List, Dict, Any
-from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, JSON
+from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, JSON, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from pgvector.sqlalchemy import Vector
@@ -28,6 +28,9 @@ class PatentsList(Base):
     embedding = Column(Vector(1536))  # Adjust dimensions as needed
     # metadata = Column(JSONB, nullable=False, default=dict)
     created_dt = Column(TIMESTAMP, server_default='CURRENT_TIMESTAMP')
+    is_tech = Column(Boolean)
+    ai_short_summary = Column(Text)
+
 
 
 # Replace the environment variable with the properly formatted connection string

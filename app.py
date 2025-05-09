@@ -18,7 +18,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Response model
 class PatentResponse:
-    def __init__(self, sys_id, official_title, tech_sector=None, inventor=None, department=None, country_region=None, google_patent_link=None, ai_summary=None, similarity=None):
+    def __init__(self, sys_id, official_title, tech_sector=None, inventor=None, department=None, country_region=None, google_patent_link=None, ai_summary=None, similarity=None, is_tech=None, ai_short_summary=None):
         self.sys_id = sys_id
         self.official_title = official_title
         self.tech_sector = tech_sector
@@ -28,6 +28,8 @@ class PatentResponse:
         self.google_patent_link = google_patent_link
         self.ai_summary = ai_summary
         self.similarity = similarity
+        self.is_tech = is_tech
+        self.ai_short_summary = ai_short_summary
 
 @app.route('/search', methods=['GET'])
 def search_patents():
@@ -92,7 +94,9 @@ def search_patents():
                 "country_region": patent.country_region,
                 "google_patent_link": patent.google_patent_link,
                 "ai_summary": patent.ai_summary,
-                "similarity": float(similarity)  # Ensure it's a float for JSON serialization
+                "similarity": float(similarity),  # Ensure it's a float for JSON serialization
+                "is_tech": patent.is_tech,
+                "ai_short_summary": patent.ai_short_summary
             }
             response.append(patent_dict)
         
