@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from typing import List, Dict, Any
-from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, JSON, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, Float, Text, TIMESTAMP, JSON, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from pgvector.sqlalchemy import Vector
@@ -30,6 +30,21 @@ class PatentsList(Base):
     created_dt = Column(TIMESTAMP, server_default='CURRENT_TIMESTAMP')
     is_tech = Column(Boolean)
     ai_short_summary = Column(Text)
+
+
+
+# Define the search log model
+class SearchLog(Base):
+    __tablename__ = 'search_logs'
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(TIMESTAMP, server_default='CURRENT_TIMESTAMP')
+    ip_address = Column(String(45))
+    headers = Column(JSON)
+    query = Column(String)
+    query_limit = Column(Integer)
+    confidence_level = Column(Float)
+    status = Column(String(10))
+
 
 
 

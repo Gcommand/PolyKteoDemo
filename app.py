@@ -1,10 +1,11 @@
 import os
+import logging
 from dotenv import load_dotenv
 from typing import List
 from flask import Flask, request, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.postgres_embedding import PatentsList, get_embedding, update_embedding
+from src.postgres_embedding import PatentsList, SearchLog, get_embedding, update_embedding
 import asyncio
 
 # Create Flask app
@@ -36,7 +37,7 @@ def search_patents():
     """
     Search for patents similar to the query text using vector embeddings.
     Returns a list of patents sorted by similarity.
-    
+
     Query parameters:
     - query: The search query to find similar patents
     - limit: Maximum number of results to return (default: 10)
@@ -46,25 +47,25 @@ def search_patents():
     query = request.args.get('query')
     limit = request.args.get('limit', default=20, type=int)
     confidence_level = request.args.get('confidence_level', default=0.2, type=float)
-    
+
     # Validate confidence_level is between 0 and 1
     if confidence_level < 0 or confidence_level > 1:
         return jsonify({"error": "confidence_level must be between 0 and 1"}), 400
-    
+
     if not query:
         return jsonify({"error": "Query parameter is required"}), 400
-    
+
     # Get a database session
     db = SessionLocal()
-    
+
     try:
         # Generate embedding for the query
         # We need to run the async function in a synchronous context
         query_embedding = asyncio.run(get_embedding(query))
-        
+
         # Calculate similarity score expression
         similarity_score = (1 - PatentsList.embedding.cosine_distance(query_embedding)).label("similarity")
-        
+
         # Perform similarity search using cosine distance
         # The <-> operator in pgvector calculates cosine distance
         results = (
@@ -81,7 +82,7 @@ def search_patents():
             .limit(limit)
             .all()
         )
-        
+
         # Format the results
         response = []
         for patent, similarity in results:
@@ -99,12 +100,36 @@ def search_patents():
                 "ai_short_summary": patent.ai_short_summary
             }
             response.append(patent_dict)
-        
+
+        # Log the successful search
+        log_entry = SearchLog(
+            ip_address=request.remote_addr,
+            headers=dict(request.headers),
+            query=query,
+            query_limit=limit,
+            confidence_level=confidence_level,
+            status="success"
+        )
+        db.add(log_entry)
+        db.commit()
+
         return jsonify(response)
-    
+
     except Exception as e:
+        # Log the failed search
+        log_entry = SearchLog(
+            ip_address=request.remote_addr,
+            headers=dict(request.headers),
+            query=query,
+            query_limit=limit,
+            confidence_level=confidence_level,
+            status="error"
+        )
+        db.add(log_entry)
+        db.commit()
+
         return jsonify({"error": f"Search error: {str(e)}"}), 500
-    
+
     finally:
         db.close()
 
