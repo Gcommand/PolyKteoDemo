@@ -36,17 +36,28 @@ class PatentResponse:
 def search_patents():
     """
     Search for patents similar to the query text using vector embeddings.
-    Returns a list of patents sorted by similarity.
+    Returns a list of patents sorted by the specified criteria.
 
     Query parameters:
     - query: The search query to find similar patents
-    - limit: Maximum number of results to return (default: 10)
-    - confidence_level: Minimum similarity score threshold (default: 0.0)
+    - confidence_level: Minimum similarity score threshold (default: 0.2)
+    - sorting_order: Sort order for results (default: REL_DESC)
+        Options:
+        - REL_DESC: Sort by Relevance: Descending
+        - REL_ASC: Sort by Relevance: Ascending
+        - FSD_ASC: Sort by Faculties, Schools & Departments: A-Z
+        - FSD_DESC: Sort by Faculties, Schools & Departments: Z-A
+        - DATE_DESC: Sort by Latest date: Latest
+        - DATE_ASC: Sort by Latest date: Oldest
+    - current_page: Current page number (default: 1)
+    - page_size: Number of results per page (default: 10)
     """
     # Get query parameters
     query = request.args.get('query')
-    limit = request.args.get('limit', default=20, type=int)
     confidence_level = request.args.get('confidence_level', default=0.2, type=float)
+    sorting_order = request.args.get('sorting_order', default='REL_DESC')
+    current_page = request.args.get('current_page', default=1, type=int)
+    page_size = request.args.get('page_size', default=10, type=int)
 
     # Validate confidence_level is between 0 and 1
     if confidence_level < 0 or confidence_level > 1:
@@ -60,28 +71,44 @@ def search_patents():
 
     try:
         # Generate embedding for the query
-        # We need to run the async function in a synchronous context
         query_embedding = asyncio.run(get_embedding(query))
 
         # Calculate similarity score expression
         similarity_score = (1 - PatentsList.embedding.cosine_distance(query_embedding)).label("similarity")
 
-        # Perform similarity search using cosine distance
-        # The <-> operator in pgvector calculates cosine distance
-        results = (
+        # Base query with similarity score and DISTINCT on sys_id
+        base_query = (
             db.query(
                 PatentsList,
                 similarity_score
             )
             .filter(PatentsList.embedding.is_not(None))
-            # Apply confidence level filter directly in the query
             .filter(similarity_score >= confidence_level)
-            .order_by(PatentsList.embedding.cosine_distance(query_embedding),
-                      similarity_score.desc()
-                      )
-            .limit(limit)
-            .all()
         )
+
+        # Apply sorting based on sorting_order
+        if sorting_order == 'REL_DESC':
+            base_query = base_query.order_by(similarity_score.desc())
+        elif sorting_order == 'REL_ASC':
+            base_query = base_query.order_by(similarity_score.asc())
+        elif sorting_order == 'FSD_ASC':
+            base_query = base_query.order_by(PatentsList.department.asc())
+        elif sorting_order == 'FSD_DESC':
+            base_query = base_query.order_by(PatentsList.department.desc())
+        elif sorting_order == 'DATE_DESC':
+            base_query = base_query.order_by(PatentsList.sys_id.desc())
+        elif sorting_order == 'DATE_ASC':
+            base_query = base_query.order_by(PatentsList.sys_id.asc())
+        else:
+            # Default to relevance descending if invalid sorting order
+            base_query = base_query.order_by(similarity_score.desc())
+
+        # Calculate total count for pagination
+        total_count = base_query.count()
+
+        # Apply pagination
+        offset = (current_page - 1) * page_size
+        results = base_query.offset(offset).limit(page_size).all()
 
         # Format the results
         response = []
@@ -95,7 +122,7 @@ def search_patents():
                 "country_region": patent.country_region,
                 "google_patent_link": patent.google_patent_link,
                 "ai_summary": patent.ai_summary,
-                "similarity": float(similarity),  # Ensure it's a float for JSON serialization
+                "similarity": float(similarity),
                 "is_tech": patent.is_tech,
                 "ai_short_summary": patent.ai_short_summary
             }
@@ -106,14 +133,22 @@ def search_patents():
             ip_address=request.remote_addr,
             headers=dict(request.headers),
             query=query,
-            query_limit=limit,
+            query_limit=page_size,
             confidence_level=confidence_level,
             status="success"
         )
         db.add(log_entry)
         db.commit()
 
-        return jsonify(response)
+        return jsonify({
+            "results": response,
+            "pagination": {
+                "total_count": total_count,
+                "current_page": current_page,
+                "page_size": page_size,
+                "total_pages": (total_count + page_size - 1) // page_size
+            }
+        })
 
     except Exception as e:
         # Log the failed search
@@ -121,7 +156,7 @@ def search_patents():
             ip_address=request.remote_addr,
             headers=dict(request.headers),
             query=query,
-            query_limit=limit,
+            query_limit=page_size,
             confidence_level=confidence_level,
             status="error"
         )
