@@ -52,6 +52,7 @@ def search_patents():
     - current_page: Current page number (default: 1)
     - page_size: Number of results per page (default: 10)
     - department: Department ID to filter results (optional)
+    - tech_sector: Tech sector to filter results (optional)
     """
     # Get query parameters
     query = request.args.get('query')
@@ -60,7 +61,9 @@ def search_patents():
     current_page = request.args.get('current_page', default=1, type=int)
     page_size = request.args.get('page_size', default=10, type=int)
     department_id = request.args.get('department', type=int)
+    tech_sector = request.args.get('tech_sector')
     print(department_id)
+    print(tech_sector)
 
     # Validate confidence_level is between 0 and 1
     if confidence_level < 0 or confidence_level > 1:
@@ -96,6 +99,10 @@ def search_patents():
                 .join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
                 .filter(PatentDepartments.department_id == department_id)
             )
+
+        # Add tech_sector filter if provided
+        if tech_sector:
+            base_query = base_query.filter(PatentsList.tech_sector == tech_sector)
 
         # Apply sorting based on sorting_order
         if sorting_order == 'REL_DESC':
