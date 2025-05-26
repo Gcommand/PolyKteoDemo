@@ -1,11 +1,11 @@
 import os
 from dotenv import load_dotenv
 from typing import List, Dict, Any
-from sqlalchemy import create_engine, Column, Integer, String, Float, Text, TIMESTAMP, JSON, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, Float, Text, TIMESTAMP, JSON, Boolean, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from pgvector.sqlalchemy import Vector
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import update
 from openai import AsyncAzureOpenAI
 import asyncio
@@ -13,6 +13,22 @@ import asyncio
 load_dotenv()
 
 Base = declarative_base()
+
+class Departments(Base):
+    __tablename__ = 'departments'
+
+    department_id = Column(Integer, primary_key=True, autoincrement=True)
+    department_name = Column(String(255), nullable=False, unique=True)
+    abbreviation = Column(String, nullable=False, unique=True)
+    patents = relationship("PatentDepartments", back_populates="department")
+
+class PatentDepartments(Base):
+    __tablename__ = 'patent_departments'
+
+    patent_id = Column(Integer, ForeignKey('patents_list.sys_id', ondelete='CASCADE'), primary_key=True)
+    department_id = Column(Integer, ForeignKey('departments.department_id', ondelete='CASCADE'), primary_key=True)
+    patent = relationship("PatentsList", back_populates="departments")
+    department = relationship("Departments", back_populates="patents")
 
 class PatentsList(Base):
     __tablename__ = 'patents_list'
@@ -30,6 +46,7 @@ class PatentsList(Base):
     created_dt = Column(TIMESTAMP, server_default='CURRENT_TIMESTAMP')
     is_tech = Column(Boolean)
     ai_short_summary = Column(Text)
+    departments = relationship("PatentDepartments", back_populates="patent")
 
 
 
