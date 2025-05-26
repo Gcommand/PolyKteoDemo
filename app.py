@@ -5,7 +5,7 @@ from typing import List
 from flask import Flask, request, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.postgres_embedding import PatentsList, SearchLog, get_embedding, update_embedding
+from src.postgres_embedding import PatentsList, SearchLog, get_embedding, update_embedding, Departments, PatentDepartments
 import asyncio
 
 # Create Flask app
@@ -51,6 +51,7 @@ def search_patents():
         - DATE_ASC: Sort by Latest date: Oldest
     - current_page: Current page number (default: 1)
     - page_size: Number of results per page (default: 10)
+    - department: Department ID to filter results (optional)
     """
     # Get query parameters
     query = request.args.get('query')
@@ -58,6 +59,8 @@ def search_patents():
     sorting_order = request.args.get('sorting_order', default='REL_DESC')
     current_page = request.args.get('current_page', default=1, type=int)
     page_size = request.args.get('page_size', default=10, type=int)
+    department_id = request.args.get('department', type=int)
+    print(department_id)
 
     # Validate confidence_level is between 0 and 1
     if confidence_level < 0 or confidence_level > 1:
@@ -86,6 +89,14 @@ def search_patents():
             .filter(similarity_score >= confidence_level)
         )
 
+        # Add department filter if department_id is provided
+        if department_id:
+            base_query = (
+                base_query
+                .join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+                .filter(PatentDepartments.department_id == department_id)
+            )
+
         # Apply sorting based on sorting_order
         if sorting_order == 'REL_DESC':
             base_query = base_query.order_by(similarity_score.desc())
@@ -113,12 +124,30 @@ def search_patents():
         # Format the results
         response = []
         for patent, similarity in results:
+            # Get departments for this patent
+            patent_departments = (
+                db.query(Departments)
+                .join(PatentDepartments, Departments.department_id == PatentDepartments.department_id)
+                .filter(PatentDepartments.patent_id == patent.sys_id)
+                .all()
+            )
+            
+            departments_list = [
+                {
+                    "department_id": dept.department_id,
+                    "department_name": dept.department_name,
+                    "abbreviation": dept.abbreviation
+                }
+                for dept in patent_departments
+            ]
+
             patent_dict = {
                 "sys_id": patent.sys_id,
                 "official_title": patent.official_title,
                 "tech_sector": patent.tech_sector,
                 "inventor": patent.inventor,
-                "department": patent.department,
+                "department": patent.department,  # Keep for backward compatibility
+                "departments": departments_list,  # Add new departments field
                 "country_region": patent.country_region,
                 "google_patent_link": patent.google_patent_link,
                 "ai_summary": patent.ai_summary,
