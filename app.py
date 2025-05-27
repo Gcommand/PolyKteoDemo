@@ -50,7 +50,7 @@ def search_patents():
         - DATE_DESC: Sort by Latest date: Latest
         - DATE_ASC: Sort by Latest date: Oldest
     - current_page: Current page number (default: 1)
-    - page_size: Number of results per page (default: 10)
+    - page_size: Number of results per page (default: 12)
     - department: Department ID to filter results (optional)
     - tech_sector: Tech sector to filter results (optional)
     """
@@ -59,7 +59,7 @@ def search_patents():
     confidence_level = request.args.get('confidence_level', default=0.2, type=float)
     sorting_order = request.args.get('sorting_order', default='REL_DESC')
     current_page = request.args.get('current_page', default=1, type=int)
-    page_size = request.args.get('page_size', default=10, type=int)
+    page_size = request.args.get('page_size', default=12, type=int)
     department_id = request.args.get('department', type=int)
     tech_sector = request.args.get('tech_sector')
     print(department_id)
