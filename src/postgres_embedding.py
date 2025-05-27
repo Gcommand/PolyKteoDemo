@@ -22,6 +22,22 @@ class Departments(Base):
     abbreviation = Column(String, nullable=False, unique=True)
     patents = relationship("PatentDepartments", back_populates="department")
 
+class Assignees(Base):
+    __tablename__ = 'assignees'
+
+    assignee_id = Column(Integer, primary_key=True, autoincrement=True)
+    assignee_name = Column(String(255), nullable=False, unique=True)
+    is_poly = Column(Boolean, nullable=False, default=False)
+    patents = relationship("PatentAssignees", back_populates="assignee")
+
+class PatentAssignees(Base):
+    __tablename__ = 'patent_assignees'
+
+    patent_id = Column(Integer, ForeignKey('patents_list.sys_id', ondelete='CASCADE'), primary_key=True)
+    assignee_id = Column(Integer, ForeignKey('assignees.assignee_id', ondelete='CASCADE'), primary_key=True)
+    patent = relationship("PatentsList", back_populates="assignees")
+    assignee = relationship("Assignees", back_populates="patents")
+
 class PatentDepartments(Base):
     __tablename__ = 'patent_departments'
 
@@ -47,6 +63,7 @@ class PatentsList(Base):
     is_tech = Column(Boolean)
     ai_short_summary = Column(Text)
     departments = relationship("PatentDepartments", back_populates="patent")
+    assignees = relationship("PatentAssignees", back_populates="patent")
 
 
 

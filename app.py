@@ -5,7 +5,7 @@ from typing import List
 from flask import Flask, request, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.postgres_embedding import PatentsList, SearchLog, get_embedding, update_embedding, Departments, PatentDepartments
+from src.postgres_embedding import PatentsList, SearchLog, get_embedding, update_embedding, Departments, PatentDepartments, Assignees, PatentAssignees
 import asyncio
 
 # Create Flask app
@@ -53,6 +53,7 @@ def search_patents():
     - page_size: Number of results per page (default: 12)
     - department: Department ID to filter results (optional)
     - tech_sector: Tech sector to filter results (optional)
+    - assignee: Assignee ID to filter results (optional)
     """
     # Get query parameters
     query = request.args.get('query')
@@ -62,8 +63,10 @@ def search_patents():
     page_size = request.args.get('page_size', default=12, type=int)
     department_id = request.args.get('department', type=int)
     tech_sector = request.args.get('tech_sector')
+    assignee_id = request.args.get('assignee_id', type=int)
     print(department_id)
     print(tech_sector)
+    print(assignee_id)
 
     # Validate confidence_level is between 0 and 1
     if confidence_level < 0 or confidence_level > 1:
@@ -98,6 +101,14 @@ def search_patents():
                 base_query
                 .join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
                 .filter(PatentDepartments.department_id == department_id)
+            )
+
+        # Add assignee filter if assignee_id is provided
+        if assignee_id:
+            base_query = (
+                base_query
+                .join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+                .filter(PatentAssignees.assignee_id == assignee_id)
             )
 
         # Add tech_sector filter if provided
@@ -225,6 +236,40 @@ async def run_update_embedding():
     except Exception as e:
         print(f"Error getting embedding: {e}")
         return "Error updating embedding"
+
+@app.route('/poly_assignees', methods=['GET'])
+def get_poly_assignees():
+    """
+    Get all assignees where is_poly is TRUE.
+    Returns a list of assignees with their details.
+    """
+    # Get a database session
+    db = SessionLocal()
+
+    try:
+        # Query assignees where is_poly is TRUE and sort by assignee_id
+        assignees = db.query(Assignees).filter(Assignees.is_poly == True).order_by(Assignees.assignee_id.asc()).all()
+
+        # Format the results
+        response = [
+            {
+                "assignee_id": assignee.assignee_id,
+                "assignee_name": assignee.assignee_name,
+                "is_poly": assignee.is_poly
+            }
+            for assignee in assignees
+        ]
+
+        return jsonify({
+            "results": response,
+            "total_count": len(response)
+        })
+
+    except Exception as e:
+        return jsonify({"error": f"Error fetching poly assignees: {str(e)}"}), 500
+
+    finally:
+        db.close()
 
 # Add a simple health check endpoint
 @app.route('/health', methods=['GET'])
