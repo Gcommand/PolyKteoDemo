@@ -5,7 +5,7 @@ from typing import List, Tuple
 from flask import Flask, request, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.postgres_embedding import PatentsList, SearchLog, get_embedding, update_embedding, Departments, PatentDepartments, Assignees, PatentAssignees
+from src.postgres_embedding import PatentsList, SearchLog, get_embedding, update_embedding, Departments, PatentDepartments, Assignees, PatentAssignees, TechSectors, PatentTechSectors
 import asyncio
 import re
 from langdetect import detect, LangDetectException
@@ -177,7 +177,7 @@ def search_patents():
     - current_page: Current page number (default: 1)
     - page_size: Number of results per page (default: 12)
     - department: Department ID to filter results (optional)
-    - tech_sector: Tech sector to filter results (optional)
+    - tech_sector_id: Tech sector ID to filter results (optional)
     - assignee: Assignee ID to filter results (optional)
     """
     # Get query parameters
@@ -187,7 +187,7 @@ def search_patents():
     current_page = request.args.get('current_page', default=1, type=int)
     page_size = request.args.get('page_size', default=12, type=int)
     department_id = request.args.get('department', type=int)
-    tech_sector = request.args.get('tech_sector')
+    tech_sector_id = request.args.get('tech_sector_id', type=int)  # Changed from tech_sector to tech_sector_id
     assignee_id = request.args.get('assignee_id', type=int)
 
     # Validate confidence_level is between 0 and 1
@@ -238,8 +238,12 @@ def search_patents():
             )
 
         # Add tech_sector filter if provided
-        if tech_sector:
-            base_query = base_query.filter(PatentsList.tech_sector == tech_sector)
+        if tech_sector_id:
+            base_query = (
+                base_query
+                .join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+                .filter(PatentTechSectors.tech_sector_id == tech_sector_id)
+            )
 
         # Apply sorting based on sorting_order
         if sorting_order == 'REL_DESC':
@@ -285,8 +289,16 @@ def search_patents():
                 for dept in patent_departments
             ]
 
+            # Get tech sectors for this patent
+            tech_sectors_list = [
+                {
+                    "tech_sector_id": ts.tech_sector_id,
+                    "tech_sector_name": ts.tech_sector_name
+                }
+                for ts in patent.tech_sectors
+            ]
+
             # Determine target Chinese language based on query language
-            # For English queries, we always use Traditional Chinese
             target_chinese = 'zh-TW'  # Default to Traditional Chinese
             if query_lang == 'zh-CN':
                 target_chinese = 'zh-CN'
@@ -298,17 +310,17 @@ def search_patents():
             patent_dict = {
                 "sys_id": patent.sys_id,
                 "official_title": patent.official_title,
-                "tech_sector": patent.tech_sector,
+                "tech_sectors": tech_sectors_list,  # New field with tech sector details
                 "inventor": patent.inventor,
                 "department": patent.department,  # Keep for backward compatibility
-                "departments": departments_list,  # Add new departments field
+                "departments": departments_list,
                 "country_region": patent.country_region,
                 "google_patent_link": patent.google_patent_link,
-                "ai_summary": chinese_summary,  # Chinese summary (Traditional/Simplified based on query language)
+                "ai_summary": chinese_summary,
                 "similarity": float(similarity),
                 "is_tech": patent.is_tech,
-                "ai_short_summary": chinese_short_summary,  # Chinese short summary (Traditional/Simplified based on query language)
-                "query_language": query_lang  # Include detected query language in response
+                "ai_short_summary": chinese_short_summary,
+                "query_language": query_lang
             }
             response.append(patent_dict)
 
@@ -332,7 +344,7 @@ def search_patents():
                 "page_size": page_size,
                 "total_pages": (total_count + page_size - 1) // page_size
             },
-            "query_language": query_lang  # Include detected query language in response
+            "query_language": query_lang
         })
 
     except Exception as e:
@@ -413,6 +425,32 @@ def get_poly_assignees():
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "healthy"})
+
+# Add a new endpoint to get all tech sectors
+@app.route('/tech_sectors', methods=['GET'])
+def get_all_tech_sectors():
+    """
+    Get all unique tech sectors.
+    Returns a list of tech sectors with their IDs and names.
+    """
+    db = SessionLocal()
+    try:
+        tech_sectors = db.query(TechSectors).order_by(TechSectors.tech_sector_name).all()
+        response = [
+            {
+                "tech_sector_id": ts.tech_sector_id,
+                "tech_sector_name": ts.tech_sector_name
+            }
+            for ts in tech_sectors
+        ]
+        return jsonify({
+            "results": response,
+            "total_count": len(response)
+        })
+    except Exception as e:
+        return jsonify({"error": f"Error fetching tech sectors: {str(e)}"}), 500
+    finally:
+        db.close()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

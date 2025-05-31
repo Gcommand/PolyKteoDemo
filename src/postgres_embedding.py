@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from typing import List, Dict, Any
-from sqlalchemy import create_engine, Column, Integer, String, Float, Text, TIMESTAMP, JSON, Boolean, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Float, Text, TIMESTAMP, JSON, Boolean, ForeignKey, Table
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from pgvector.sqlalchemy import Vector
@@ -13,6 +13,24 @@ import asyncio
 load_dotenv()
 
 Base = declarative_base()
+
+# Association table for the many-to-many relationship between patents and tech_sectors
+patent_tech_sectors_table = Table('patent_tech_sectors', Base.metadata,
+    Column('patent_sys_id', Integer, ForeignKey('patents_list.sys_id', ondelete='CASCADE'), primary_key=True),
+    Column('tech_sector_id', Integer, ForeignKey('tech_sectors.tech_sector_id', ondelete='CASCADE'), primary_key=True)
+)
+
+class TechSectors(Base):
+    __tablename__ = 'tech_sectors'
+    tech_sector_id = Column(Integer, primary_key=True, autoincrement=True)
+    tech_sector_name = Column(String(255), unique=True, nullable=False)
+    patents = relationship("PatentsList", secondary=patent_tech_sectors_table, back_populates="tech_sectors")
+
+class PatentTechSectors(Base):
+    __tablename__ = 'patent_tech_sectors'
+    patent_sys_id = Column(Integer, ForeignKey('patents_list.sys_id', ondelete='CASCADE'), primary_key=True)
+    tech_sector_id = Column(Integer, ForeignKey('tech_sectors.tech_sector_id', ondelete='CASCADE'), primary_key=True)
+    __table_args__ = {'extend_existing': True}
 
 class Departments(Base):
     __tablename__ = 'departments'
@@ -51,7 +69,7 @@ class PatentsList(Base):
 
     sys_id = Column(Integer, primary_key=True, autoincrement=True)
     official_title = Column(String(255), nullable=False)
-    tech_sector = Column(String(255))
+    # tech_sector = Column(String(255))  # Old column, commented out as we're using the new relationship
     inventor = Column(String(255))
     department = Column(String(255))
     country_region = Column(String(100))
@@ -64,6 +82,7 @@ class PatentsList(Base):
     ai_short_summary = Column(Text)
     departments = relationship("PatentDepartments", back_populates="patent")
     assignees = relationship("PatentAssignees", back_populates="patent")
+    tech_sectors = relationship("TechSectors", secondary=patent_tech_sectors_table, back_populates="patents", lazy="joined")
 
 
 
