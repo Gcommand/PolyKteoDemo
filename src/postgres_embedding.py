@@ -78,8 +78,9 @@ class PatentsList(Base):
     embedding = Column(Vector(1536))  # Adjust dimensions as needed
     # metadata = Column(JSONB, nullable=False, default=dict)
     created_dt = Column(TIMESTAMP, server_default='CURRENT_TIMESTAMP')
-    is_tech = Column(Boolean)
+    is_tech = Column(Boolean, default=False)
     ai_short_summary = Column(Text)
+    is_cn_applied = Column(Boolean, nullable=False, default=False)
     departments = relationship("PatentDepartments", back_populates="patent")
     assignees = relationship("PatentAssignees", back_populates="patent")
     tech_sectors = relationship("TechSectors", secondary=patent_tech_sectors_table, back_populates="patents", lazy="joined")

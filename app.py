@@ -179,6 +179,7 @@ def search_patents():
     - department: Department ID to filter results (optional)
     - tech_sector_id: Tech sector ID to filter results (optional)
     - assignee: Assignee ID to filter results (optional)
+    - is_cn_applied: Filter by CN application status (optional, boolean)
     """
     # Get query parameters
     query = request.args.get('query')
@@ -187,8 +188,9 @@ def search_patents():
     current_page = request.args.get('current_page', default=1, type=int)
     page_size = request.args.get('page_size', default=12, type=int)
     department_id = request.args.get('department', type=int)
-    tech_sector_id = request.args.get('tech_sector_id', type=int)  # Changed from tech_sector to tech_sector_id
+    tech_sector_id = request.args.get('tech_sector_id', type=int)
     assignee_id = request.args.get('assignee_id', type=int)
+    is_cn_applied = request.args.get('is_cn_applied', type=lambda v: v.lower() == 'true' if v is not None else None)
 
     # Validate confidence_level is between 0 and 1
     if confidence_level < 0 or confidence_level > 1:
@@ -211,7 +213,7 @@ def search_patents():
         # Calculate similarity score expression
         similarity_score = (1 - PatentsList.embedding.cosine_distance(query_embedding)).label("similarity")
 
-        # Base query with similarity score and DISTINCT on sys_id
+        # Base query with similarity score
         base_query = (
             db.query(
                 PatentsList,
@@ -244,6 +246,10 @@ def search_patents():
                 .join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
                 .filter(PatentTechSectors.tech_sector_id == tech_sector_id)
             )
+
+        # Add is_cn_applied filter if provided
+        if is_cn_applied is not None:
+            base_query = base_query.filter(PatentsList.is_cn_applied == is_cn_applied)
 
         # Apply sorting based on sorting_order
         if sorting_order == 'REL_DESC':
@@ -310,7 +316,7 @@ def search_patents():
             patent_dict = {
                 "sys_id": patent.sys_id,
                 "official_title": patent.official_title,
-                "tech_sectors": tech_sectors_list,  # New field with tech sector details
+                "tech_sectors": tech_sectors_list,
                 "inventor": patent.inventor,
                 "department": patent.department,  # Keep for backward compatibility
                 "departments": departments_list,
@@ -319,6 +325,7 @@ def search_patents():
                 "ai_summary": chinese_summary,
                 "similarity": float(similarity),
                 "is_tech": patent.is_tech,
+                "is_cn_applied": patent.is_cn_applied,
                 "ai_short_summary": chinese_short_summary,
                 "query_language": query_lang
             }
