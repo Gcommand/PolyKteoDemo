@@ -177,7 +177,10 @@ def search_patents():
     - current_page: Current page number (default: 1)
     - page_size: Number of results per page (default: 12)
     - department: Department ID to filter results (optional)
-    - tech_sector_id: Tech sector ID to filter results (optional)
+    - tech_sector_id: Tech sector ID(s) to filter results (optional, can be multiple values)
+        Examples:
+        - tech_sector_id=1,2,3 (comma-separated)
+        - tech_sector_id=1&tech_sector_id=2 (multiple parameters)
     - assignee: Assignee ID to filter results (optional)
     - is_cn_applied: Filter by CN application status (optional, boolean)
     """
@@ -188,7 +191,17 @@ def search_patents():
     current_page = request.args.get('current_page', default=1, type=int)
     page_size = request.args.get('page_size', default=12, type=int)
     department_id = request.args.get('department', type=int)
-    tech_sector_id = request.args.get('tech_sector_id', type=int)
+    
+    # Handle multiple tech_sector_id values
+    tech_sector_ids = []
+    if 'tech_sector_id' in request.args:
+        # Handle comma-separated values
+        tech_sector_ids.extend([
+            int(id.strip()) 
+            for id in request.args.getlist('tech_sector_id') 
+            for id in id.split(',')
+        ])
+    
     assignee_id = request.args.get('assignee_id', type=int)
     is_cn_applied = request.args.get('is_cn_applied', type=lambda v: v.lower() == 'true' if v is not None else None)
 
@@ -240,11 +253,11 @@ def search_patents():
             )
 
         # Add tech_sector filter if provided
-        if tech_sector_id:
+        if tech_sector_ids:
             base_query = (
                 base_query
                 .join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
-                .filter(PatentTechSectors.tech_sector_id == tech_sector_id)
+                .filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
             )
 
         # Add is_cn_applied filter if provided
