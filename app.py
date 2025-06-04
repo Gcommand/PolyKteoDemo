@@ -176,12 +176,18 @@ def search_patents():
         - DATE_ASC: Sort by Latest date: Oldest
     - current_page: Current page number (default: 1)
     - page_size: Number of results per page (default: 12)
-    - department: Department ID to filter results (optional)
+    - department: Department ID(s) to filter results (optional, can be multiple values)
+        Examples:
+        - department=1,2,3 (comma-separated)
+        - department=1&department=2 (multiple parameters)
     - tech_sector_id: Tech sector ID(s) to filter results (optional, can be multiple values)
         Examples:
         - tech_sector_id=1,2,3 (comma-separated)
         - tech_sector_id=1&tech_sector_id=2 (multiple parameters)
-    - assignee: Assignee ID to filter results (optional)
+    - assignee_id: Assignee ID(s) to filter results (optional, can be multiple values)
+        Examples:
+        - assignee_id=1,2,3 (comma-separated)
+        - assignee_id=1&assignee_id=2 (multiple parameters)
     - is_cn_applied: Filter by CN application status (optional, boolean)
     """
     # Get query parameters
@@ -190,20 +196,45 @@ def search_patents():
     sorting_order = request.args.get('sorting_order', default='REL_DESC')
     current_page = request.args.get('current_page', default=1, type=int)
     page_size = request.args.get('page_size', default=12, type=int)
-    department_id = request.args.get('department', type=int)
+    
+    # Handle multiple department_id values
+    department_ids = []
+    department_param = request.args.get('department') or request.args.get('departmentNumber')
+    if department_param and department_param.strip():
+        department_ids.extend([
+            int(id.strip()) 
+            for id in department_param.split(',')
+            if id.strip()
+        ])
     
     # Handle multiple tech_sector_id values
     tech_sector_ids = []
-    if 'tech_sector_id' in request.args:
-        # Handle comma-separated values
+    tech_sector_param = request.args.get('tech_sector_id') or request.args.get('techSectorId')
+    if tech_sector_param and tech_sector_param.strip():
         tech_sector_ids.extend([
             int(id.strip()) 
-            for id in request.args.getlist('tech_sector_id') 
-            for id in id.split(',')
+            for id in tech_sector_param.split(',')
+            if id.strip()
         ])
     
-    assignee_id = request.args.get('assignee_id', type=int)
+    # Handle multiple assignee_id values
+    assignee_ids = []
+    assignee_param = request.args.get('assignee_id') or request.args.get('assigneeId')
+    if assignee_param and assignee_param.strip():
+        assignee_ids.extend([
+            int(id.strip()) 
+            for id in assignee_param.split(',')
+            if id.strip()
+        ])
+    
     is_cn_applied = request.args.get('is_cn_applied', type=lambda v: v.lower() == 'true' if v is not None else None)
+
+    # Add debug logging
+    print(f"Received parameters:")
+    print(f"department_ids: {department_ids}")
+    print(f"tech_sector_ids: {tech_sector_ids}")
+    print(f"assignee_ids: {assignee_ids}")
+    print(f"is_cn_applied: {is_cn_applied}")
 
     # Validate confidence_level is between 0 and 1
     if confidence_level < 0 or confidence_level > 1:
@@ -236,20 +267,20 @@ def search_patents():
             .filter(similarity_score >= confidence_level)
         )
 
-        # Add department filter if department_id is provided
-        if department_id:
+        # Add department filter if department_ids are provided
+        if department_ids:
             base_query = (
                 base_query
                 .join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
-                .filter(PatentDepartments.department_id == department_id)
+                .filter(PatentDepartments.department_id.in_(department_ids))
             )
 
-        # Add assignee filter if assignee_id is provided
-        if assignee_id:
+        # Add assignee filter if assignee_ids are provided
+        if assignee_ids:
             base_query = (
                 base_query
                 .join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
-                .filter(PatentAssignees.assignee_id == assignee_id)
+                .filter(PatentAssignees.assignee_id.in_(assignee_ids))
             )
 
         # Add tech_sector filter if provided
@@ -264,25 +295,41 @@ def search_patents():
         if is_cn_applied is not None:
             base_query = base_query.filter(PatentsList.is_cn_applied == is_cn_applied)
 
+        # Calculate total count for pagination using a subquery
+        count_query = db.query(PatentsList.sys_id).distinct()
+        if department_ids:
+            count_query = count_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+            count_query = count_query.filter(PatentDepartments.department_id.in_(department_ids))
+        if assignee_ids:
+            count_query = count_query.join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+            count_query = count_query.filter(PatentAssignees.assignee_id.in_(assignee_ids))
+        if tech_sector_ids:
+            count_query = count_query.join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+            count_query = count_query.filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
+        if is_cn_applied is not None:
+            count_query = count_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+        
+        total_count = count_query.count()
+
         # Apply sorting based on sorting_order
         if sorting_order == 'REL_DESC':
-            base_query = base_query.order_by(similarity_score.desc())
+            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.desc())
         elif sorting_order == 'REL_ASC':
-            base_query = base_query.order_by(similarity_score.asc())
+            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.asc())
         elif sorting_order == 'FSD_ASC':
-            base_query = base_query.order_by(PatentsList.department.asc())
+            base_query = base_query.order_by(PatentsList.sys_id, PatentsList.department.asc())
         elif sorting_order == 'FSD_DESC':
-            base_query = base_query.order_by(PatentsList.department.desc())
+            base_query = base_query.order_by(PatentsList.sys_id, PatentsList.department.desc())
         elif sorting_order == 'DATE_DESC':
             base_query = base_query.order_by(PatentsList.sys_id.desc())
         elif sorting_order == 'DATE_ASC':
             base_query = base_query.order_by(PatentsList.sys_id.asc())
         else:
             # Default to relevance descending if invalid sorting order
-            base_query = base_query.order_by(similarity_score.desc())
+            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.desc())
 
-        # Calculate total count for pagination
-        total_count = base_query.count()
+        # Apply distinct after ordering
+        base_query = base_query.distinct(PatentsList.sys_id)
 
         # Apply pagination
         offset = (current_page - 1) * page_size
