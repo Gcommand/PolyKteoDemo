@@ -1,4 +1,4 @@
-﻿﻿FROM python:3.11-slim
+﻿FROM python:3.11-slim
 
 # Attempt to update C++ runtime - CAUTION!
 RUN apt-get update && apt-get install -y --only-upgrade libstdc++6 gcc g++ # May need specific versions or sources
