@@ -313,20 +313,20 @@ def search_patents():
 
         # Apply sorting based on sorting_order
         if sorting_order == 'REL_DESC':
-            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.desc())
+            base_query = base_query.order_by(similarity_score.desc(), PatentsList.sys_id)
         elif sorting_order == 'REL_ASC':
-            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.asc())
+            base_query = base_query.order_by(similarity_score.asc(), PatentsList.sys_id)
         elif sorting_order == 'FSD_ASC':
-            base_query = base_query.order_by(PatentsList.sys_id, PatentsList.department.asc())
+            base_query = base_query.order_by(PatentsList.department.asc(), PatentsList.sys_id)
         elif sorting_order == 'FSD_DESC':
-            base_query = base_query.order_by(PatentsList.sys_id, PatentsList.department.desc())
+            base_query = base_query.order_by(PatentsList.department.desc(), PatentsList.sys_id)
         elif sorting_order == 'DATE_DESC':
             base_query = base_query.order_by(PatentsList.sys_id.desc())
         elif sorting_order == 'DATE_ASC':
             base_query = base_query.order_by(PatentsList.sys_id.asc())
         else:
             # Default to relevance descending if invalid sorting order
-            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.desc())
+            base_query = base_query.order_by(similarity_score.desc(), PatentsList.sys_id)
 
         # Apply distinct after ordering
         base_query = base_query.distinct(PatentsList.sys_id)
