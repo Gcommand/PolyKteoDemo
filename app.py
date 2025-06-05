@@ -311,7 +311,28 @@ def search_patents():
         
         total_count = count_query.count()
 
-        # Apply sorting based on sorting_order
+        # First ordering step: Required by PostgreSQL's DISTINCT ON clause
+        # When using DISTINCT ON, the first expressions in ORDER BY must match DISTINCT ON expressions exactly
+        # This ensures we get the correct distinct rows while satisfying PostgreSQL's requirements
+        if sorting_order == 'REL_DESC':
+            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.desc())
+        elif sorting_order == 'REL_ASC':
+            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.asc())
+        elif sorting_order == 'FSD_ASC':
+            base_query = base_query.order_by(PatentsList.sys_id, PatentsList.department.asc())
+        elif sorting_order == 'FSD_DESC':
+            base_query = base_query.order_by(PatentsList.sys_id, PatentsList.department.desc())
+        elif sorting_order == 'DATE_DESC':
+            base_query = base_query.order_by(PatentsList.sys_id.desc())
+        elif sorting_order == 'DATE_ASC':
+            base_query = base_query.order_by(PatentsList.sys_id.asc())
+        else:
+            # Default to relevance descending if invalid sorting order
+            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.desc())
+
+        # Second ordering step: Apply the actual desired sorting after DISTINCT ON operation
+        # This ensures the final results are sorted according to the user's preference
+        # Note: The first ordering step is only for PostgreSQL's DISTINCT ON requirement
         if sorting_order == 'REL_DESC':
             base_query = base_query.order_by(similarity_score.desc(), PatentsList.sys_id)
         elif sorting_order == 'REL_ASC':
@@ -327,9 +348,6 @@ def search_patents():
         else:
             # Default to relevance descending if invalid sorting order
             base_query = base_query.order_by(similarity_score.desc(), PatentsList.sys_id)
-
-        # Apply distinct after ordering
-        base_query = base_query.distinct(PatentsList.sys_id)
 
         # Apply pagination
         offset = (current_page - 1) * page_size
