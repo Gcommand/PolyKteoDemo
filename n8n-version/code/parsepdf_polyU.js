@@ -156,6 +156,8 @@ function parseRemainingContentLineByLine(contentStr) {
 
     // --- Assign Official Title from Pre-Tech Sector Content ---
     data.officialTitle = preTechSectorContent.replace(/[\s;]+/g, ' ').replace(/\s+/g, ' ').trim();
+    // Post-process officialTitle to remove spaces between Chinese characters
+    data.officialTitle = data.officialTitle.replace(/([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])/g, '$1$2');
 
 
     // --- Now, Process Post-Tech Sector Content for Departments, Inventors, and Country ---
@@ -202,6 +204,8 @@ function parseRemainingContentLineByLine(contentStr) {
                 tempInventors.push(...subParts.map(s => s.trim()).filter(Boolean));
             }
             data.inventors = [...new Set(tempInventors)].join('; '); // Remove duplicates and join
+            // Post-process inventors to remove spaces between Chinese characters
+            data.inventors = data.inventors.replace(/([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])/g, '$1$2');
         }
 
         // Process remainingContentAfterInventors for departments and country
