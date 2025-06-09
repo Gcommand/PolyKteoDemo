@@ -2,16 +2,19 @@ import os
 from dotenv import load_dotenv
 from typing import List, Dict, Any
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text, TIMESTAMP, JSON, Boolean, ForeignKey, Table
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import update
 from openai import AsyncAzureOpenAI
 import asyncio
+from datetime import datetime
+import numpy as np
 
 load_dotenv()
 
+# Create base class for declarative models
 Base = declarative_base()
 
 # Association table for the many-to-many relationship between patents and tech_sectors

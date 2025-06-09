@@ -3,8 +3,8 @@ import logging
 from dotenv import load_dotenv
 from typing import List, Tuple
 from flask import Flask, request, jsonify
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, desc, asc, func, text, bindparam, ARRAY, Float
+from sqlalchemy.orm import sessionmaker, joinedload, contains_eager
 from src.postgres_embedding import PatentsList, SearchLog, get_embedding, update_embedding, Departments, PatentDepartments, Assignees, PatentAssignees, TechSectors, PatentTechSectors
 import asyncio
 import re
@@ -151,6 +151,120 @@ class PatentResponse:
         self.similarity = similarity
         self.is_tech = is_tech
         self.ai_short_summary = ai_short_summary
+
+def apply_sorting(query, sort_order, similarity_score):
+    """Apply sorting to the query based on the sort order.
+    
+    This function handles different sorting criteria for patent search results.
+    
+    Key Implementation Notes:
+    1. Query Structure:
+       - Uses SQLAlchemy's query API for better type safety
+       - Joins all necessary tables in a single query
+       - Handles null values appropriately
+       - Uses subqueries for department sorting to get first department name
+       - Includes similarity score for all sorting orders
+    
+    Args:
+        query: Base query to apply sorting to
+        sort_order: String indicating the sort order (REL_DESC, REL_ASC, etc.)
+        similarity_score: The similarity score expression to use for sorting
+    
+    Returns:
+        Query with appropriate sorting and relationship loading applied
+    """
+    # Create a subquery for ranked departments
+    ranked_departments = (
+        query.session.query(
+            PatentsList.sys_id,
+            Departments.department_name,
+            func.row_number().over(
+                partition_by=PatentsList.sys_id,
+                order_by=Departments.department_name
+            ).label('dept_rank')
+        )
+        .outerjoin(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+        .outerjoin(Departments, PatentDepartments.department_id == Departments.department_id)
+        .subquery()
+    )
+    
+    if sort_order == 'REL_DESC':
+        return (
+            query.session.query(
+                PatentsList,
+                similarity_score,
+                ranked_departments.c.department_name
+            )
+            .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
+            .filter(ranked_departments.c.dept_rank == 1)
+            .order_by(similarity_score.desc())
+        )
+    elif sort_order == 'REL_ASC':
+        return (
+            query.session.query(
+                PatentsList,
+                similarity_score,
+                ranked_departments.c.department_name
+            )
+            .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
+            .filter(ranked_departments.c.dept_rank == 1)
+            .order_by(similarity_score)
+        )
+    elif sort_order == 'FSD_ASC':
+        return (
+            query.session.query(
+                PatentsList,
+                similarity_score,
+                ranked_departments.c.department_name
+            )
+            .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
+            .filter(ranked_departments.c.dept_rank == 1)
+            .order_by(ranked_departments.c.department_name)
+        )
+    elif sort_order == 'FSD_DESC':
+        return (
+            query.session.query(
+                PatentsList,
+                similarity_score,
+                ranked_departments.c.department_name
+            )
+            .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
+            .filter(ranked_departments.c.dept_rank == 1)
+            .order_by(desc(ranked_departments.c.department_name))
+        )
+    elif sort_order == 'DATE_DESC':
+        return (
+            query.session.query(
+                PatentsList,
+                similarity_score,
+                ranked_departments.c.department_name
+            )
+            .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
+            .filter(ranked_departments.c.dept_rank == 1)
+            .order_by(desc(PatentsList.created_dt))
+        )
+    elif sort_order == 'DATE_ASC':
+        return (
+            query.session.query(
+                PatentsList,
+                similarity_score,
+                ranked_departments.c.department_name
+            )
+            .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
+            .filter(ranked_departments.c.dept_rank == 1)
+            .order_by(PatentsList.created_dt)
+        )
+    else:
+        # Default to unsorted results
+        return (
+            query.session.query(
+                PatentsList,
+                similarity_score,
+                ranked_departments.c.department_name
+            )
+            .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
+            .filter(ranked_departments.c.dept_rank == 1)
+        )
 
 @app.route('/search', methods=['GET'])
 def search_patents():
@@ -311,43 +425,8 @@ def search_patents():
         
         total_count = count_query.count()
 
-        # First ordering step: Required by PostgreSQL's DISTINCT ON clause
-        # When using DISTINCT ON, the first expressions in ORDER BY must match DISTINCT ON expressions exactly
-        # This ensures we get the correct distinct rows while satisfying PostgreSQL's requirements
-        if sorting_order == 'REL_DESC':
-            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.desc())
-        elif sorting_order == 'REL_ASC':
-            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.asc())
-        elif sorting_order == 'FSD_ASC':
-            base_query = base_query.order_by(PatentsList.sys_id, PatentsList.department.asc())
-        elif sorting_order == 'FSD_DESC':
-            base_query = base_query.order_by(PatentsList.sys_id, PatentsList.department.desc())
-        elif sorting_order == 'DATE_DESC':
-            base_query = base_query.order_by(PatentsList.sys_id.desc())
-        elif sorting_order == 'DATE_ASC':
-            base_query = base_query.order_by(PatentsList.sys_id.asc())
-        else:
-            # Default to relevance descending if invalid sorting order
-            base_query = base_query.order_by(PatentsList.sys_id, similarity_score.desc())
-
-        # Second ordering step: Apply the actual desired sorting after DISTINCT ON operation
-        # This ensures the final results are sorted according to the user's preference
-        # Note: The first ordering step is only for PostgreSQL's DISTINCT ON requirement
-        if sorting_order == 'REL_DESC':
-            base_query = base_query.order_by(similarity_score.desc(), PatentsList.sys_id)
-        elif sorting_order == 'REL_ASC':
-            base_query = base_query.order_by(similarity_score.asc(), PatentsList.sys_id)
-        elif sorting_order == 'FSD_ASC':
-            base_query = base_query.order_by(PatentsList.department.asc(), PatentsList.sys_id)
-        elif sorting_order == 'FSD_DESC':
-            base_query = base_query.order_by(PatentsList.department.desc(), PatentsList.sys_id)
-        elif sorting_order == 'DATE_DESC':
-            base_query = base_query.order_by(PatentsList.sys_id.desc())
-        elif sorting_order == 'DATE_ASC':
-            base_query = base_query.order_by(PatentsList.sys_id.asc())
-        else:
-            # Default to relevance descending if invalid sorting order
-            base_query = base_query.order_by(similarity_score.desc(), PatentsList.sys_id)
+        # Apply sorting
+        base_query = apply_sorting(base_query, sorting_order, similarity_score)
 
         # Apply pagination
         offset = (current_page - 1) * page_size
@@ -355,7 +434,10 @@ def search_patents():
 
         # Format the results
         response = []
-        for patent, similarity in results:
+        for result in results:
+            # Unpack the result tuple (patent, similarity, department_name)
+            patent, similarity, department_name = result
+            
             # Get departments for this patent
             patent_departments = (
                 db.query(Departments)
@@ -401,7 +483,7 @@ def search_patents():
                 "country_region": patent.country_region,
                 "google_patent_link": patent.google_patent_link,
                 "ai_summary": chinese_summary,
-                "similarity": float(similarity),
+                "similarity": float(similarity) if similarity is not None else 0.0,
                 "is_tech": patent.is_tech,
                 "is_cn_applied": patent.is_cn_applied,
                 "ai_short_summary": chinese_short_summary,
@@ -433,6 +515,31 @@ def search_patents():
         })
 
     except Exception as e:
+        # Enhanced error logging
+        error_details = {
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "query": query,
+            "sorting_order": sorting_order,
+            "confidence_level": confidence_level,
+            "department_ids": department_ids,
+            "tech_sector_ids": tech_sector_ids,
+            "assignee_ids": assignee_ids,
+            "is_cn_applied": is_cn_applied
+        }
+        print("=== Search Error Details ===")
+        print(f"Error Type: {error_details['error_type']}")
+        print(f"Error Message: {error_details['error_message']}")
+        print(f"Query Parameters:")
+        print(f"  - Query: {error_details['query']}")
+        print(f"  - Sorting Order: {error_details['sorting_order']}")
+        print(f"  - Confidence Level: {error_details['confidence_level']}")
+        print(f"  - Department IDs: {error_details['department_ids']}")
+        print(f"  - Tech Sector IDs: {error_details['tech_sector_ids']}")
+        print(f"  - Assignee IDs: {error_details['assignee_ids']}")
+        print(f"  - Is CN Applied: {error_details['is_cn_applied']}")
+        print("=========================")
+
         # Log the failed search
         log_entry = SearchLog(
             ip_address=request.remote_addr,
