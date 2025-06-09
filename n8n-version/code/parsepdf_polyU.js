@@ -97,53 +97,17 @@ function parseRemainingContentLineByLine(contentStr) {
         countryRegion: '' // Initialize country here
     };
 
-    // --- Preprocessing: Normalize problematic newline splits (applied to the *current* contentStr) ---
+    // --- Preprocessing: Normalize problematic newline splits and consolidate whitespace ---
     // This happens here, ensuring fixes are applied to the single patent entry's content.
     let processedContentStr = contentStr;
     processedContentStr = processedContentStr.replace(/Electrical & Manufacturing\/Information and\nCommunications Technology/g, 'Electrical & Manufacturing/Information and Communications Technology');
-    processedContentStr = processedContentStr.replace(/LIU, Shun-\nyee Michael/g, 'LIU, Shun-yee Michael');
-    processedContentStr = processedContentStr.replace(/TSE, Chi Kong\nMichael/g, 'TSE, Chi Kong Michael');
-    processedContentStr = processedContentStr.replace(/HU,\nJunyan/g, 'HU, Junyan');
-    processedContentStr = processedContentStr.replace(/WONG, Lai Wa\nHelen/g, 'WONG, Lai Wa Helen');
-    processedContentStr = processedContentStr.replace(/CHENG, Norbert C./g, 'CHENG, Norbert C.');
-    processedContentStr = processedContentStr.replace(/LAU, Chung Ming;/g, 'LAU, Chung Ming;');
-    processedContentStr = processedContentStr.replace(/TSE, Chi Kong\nMichael/g, 'TSE, Chi Kong Michael');
-    processedContentStr = processedContentStr.replace(/TONG, Kai-yu Raymond;/g, 'TONG, Kai-yu Raymond;');
-    processedContentStr = processedContentStr.replace(/SONG, Rong\n/g, 'SONG, Rong ');
-    processedContentStr = processedContentStr.replace(/ZHANG, Dapeng David;/g, 'ZHANG, Dapeng David;');
-    processedContentStr = processedContentStr.replace(/LUO, Nan;/g, 'LUO, Nan;');
-    processedContentStr = processedContentStr.replace(/LI, Wei;/g, 'LI, Wei;');
-    processedContentStr = processedContentStr.replace(/ZHANG, Lei;/g, 'ZHANG, Lei;');
-    processedContentStr = processedContentStr.replace(/KANHANGAD, Vivek/g, 'KANHANGAD, Vivek');
-    processedContentStr = processedContentStr.replace(/CHENG, Ka Wai Eric;/g, 'CHENG, Ka Wai Eric;');
-    processedContentStr = processedContentStr.replace(/XUE, Xiangdang;/g, 'XUE, Xiangdang;');
-    processedContentStr = processedContentStr.replace(/NGAI, Wing Kit;/g, 'NGAI, Wing Kit;');
-    processedContentStr = processedContentStr.replace(/WA, Honwah;/g, 'WA, Honwah;');
-    processedContentStr = processedContentStr.replace(/HO, Sze Kit\nNewmen;/g, 'HO, Sze Kit Newmen;');
-    processedContentStr = processedContentStr.replace(/CHAN, Tai Wai David;/g, 'CHAN, Tai Wai David;');
-    processedContentStr = processedContentStr.replace(/PANG, Man Kit\nPeter/g, 'PANG, Man Kit Peter');
-    processedContentStr = processedContentStr.replace(/LEUNG, Woon Fong\nWallace/g, 'LEUNG, Woon Fong Wallace');
-    processedContentStr = processedContentStr.replace(/KIn-\nwing;/g, 'KIn-wing;');
-    processedContentStr = processedContentStr.replace(/LAM, Tin-yan;/g, 'LAM, Tin-yan;');
-    processedContentStr = processedContentStr.replace(/LI, Yi;/g, 'LI, Yi;');
-    processedContentStr = processedContentStr.replace(/LO, Lok-yuen Cherry;/g, 'LO, Lok-yuen Cherry;');
-    processedContentStr = processedContentStr.replace(/CHOW, Hoi\nLam Martin;/g, 'CHOW, Hoi Lam Martin;');
-    processedContentStr = processedContentStr.replace(/SIU, Kam-wah/g, 'SIU, Kam-wah');
-    processedContentStr = processedContentStr.replace(/LI, Jianqing;/g, 'LI, Jianqing;');
-    processedContentStr = processedContentStr.replace(/DAOUD, Walid A.;/g, 'DAOUD, Walid A;');
-    processedContentStr = processedContentStr.replace(/XIN, Haozhong John;/g, 'XIN, Haozhong John;');
-    processedContentStr = processedContentStr.replace(/QI, Kai Hong/g, 'QI, Kai Hong');
-    processedContentStr = processedContentStr.replace(/HU, Junyan\nTAO, Xiao-ming; XU, Bingang/g, 'HU, Junyan; TAO, Xiao-ming; XU, Bingang');
-    processedContentStr = processedContentStr.replace(/CHENG, Ka Wai Eric; XUE, Xiangdang;\nCHEUNG, Norbert C./g, 'CHENG, Ka Wai Eric; XUE, Xiangdang; CHEUNG, Norbert C.');
-    processedContentStr = processedContentStr.replace(/LEUNG, Woon Fong Wallace; KWOK,\nKing Lun Alan; CHAN, Mau Wah Andy;\nSZE, So-Lam/g, 'LEUNG, Woon Fong Wallace; KWOK, King Lun Alan; CHAN, Mau Wah Andy; SZE, So-Lam');
-    processedContentStr = processedContentStr.replace(/PANG, Man Kit\nPeter/g, 'PANG, Man Kit Peter');
-    processedContentStr = processedContentStr.replace(/LI, Yi; LO, Lok-yuen Cherry; HU, Junyan/g, 'LI, Yi; LO, Lok-yuen Cherry; HU, Junyan');
-    processedContentStr = processedContentStr.replace(/LO, Chun Lap Samuel; OR, Siu-wing\nDerek/g, 'LO, Chun Lap Samuel; OR, Siu-wing Derek');
-    processedContentStr = processedContentStr.replace(/FONG, Bernard Cheuk Mun; SIU\n, Wan/g, 'FONG, Bernard Cheuk Mun; SIU Wan');
-    processedContentStr = processedContentStr.replace(/DAOUD, Walid A.; XIN, Haozhong John;\nQI, Kai Hong/g, 'DAOUD, Walid A.; XIN, Haozhong John; QI, Kai Hong');
-    processedContentStr = processedContentStr.replace(/SIU\n, Wan Chi/g, 'SIU, Wan Chi'); // Additional fix from PDF review
-    processedContentStr = processedContentStr.replace(/TAM, Hwa-yaw; HO, Siu Lau; LIU, Shun-\nyee Michael/g, 'TAM, Hwa-yaw; HO, Siu Lau; LIU, Shun-yee Michael'); // Fix for record 3
-    processedContentStr = processedContentStr.replace(/LAU, Chung Ming; TSE, Chi Kong\nMichael/g, 'LAU, Chung Ming; TSE, Chi Kong Michael'); // Fix for record 4
+
+    // General replacement of newlines in names and general text
+    // Replace newline that is preceded by a non-whitespace character and followed by a capitalized letter or a character that looks like a name part
+    processedContentStr = processedContentStr.replace(/([a-zA-Z\.'\-,\/])\s*\n([A-Z\u4e00-\u9fa5])/g, '$1 $2');
+    processedContentStr = processedContentStr.replace(/([a-zA-Z])\n([a-zA-Z])/g, '$1 $2'); // Catches simple word splits
+    processedContentStr = processedContentStr.replace(/\s+/g, ' '); // Consolidate multiple spaces
+    processedContentStr = processedContentStr.trim();
 
 
     console.log('Content String after preprocessing (newlines for known phrases):', `\n---\n${processedContentStr}\n---`);
@@ -195,167 +159,80 @@ function parseRemainingContentLineByLine(contentStr) {
 
 
     // --- Now, Process Post-Tech Sector Content for Departments, Inventors, and Country ---
-    // Only characters within postTechSectorContent will be marked/used for these fields.
+    // Strict sequential parsing based on the golden rule
     if (postTechSectorContent) {
-        const charUsedPostZone = new Array(postTechSectorContent.length).fill(false); // New charUsed for this zone
-
-        // Helper for this zone
-        const markCharsUsedInPostZone = (startIndex, endIndex) => {
-            for (let i = startIndex; i < endIndex; i++) {
-                if (i >= 0 && i < postTechSectorContent.length) {
-                    charUsedPostZone[i] = true;
-                }
-            }
-        };
-
-        let postZoneSegments = [];
-
-        // Add the primary tech sector as a segment in the post-zone to mark its characters
+        let contentAfterTechSector = postTechSectorContent;
+        // Remove the tech sector itself from the front of this content
         if (primaryTechSectorMatch) {
-            // Start index relative to postTechSectorContent (which begins at primaryTechSectorMatch.index)
-            postZoneSegments.push({
-                text: primaryTechSectorMatch[0],
-                startIndex: 0,
-                endIndex: primaryTechSectorMatch[0].length,
-                type: 'techSector',
-                canonical: data.techSector
-            });
+            contentAfterTechSector = contentAfterTechSector.substring(primaryTechSectorMatch[0].length).trim();
         }
 
-        // Identify Departments within postTechSectorContent
-        const sortedDepartments = [...knownDepartments].sort((a, b) => b.length - a.length);
-        for (const kd of sortedDepartments) {
+        let firstDeptStart = Infinity;
+        let firstCountryStart = Infinity;
+
+        // Find the earliest department
+        for (const kd of knownDepartments) {
+            const match = contentAfterTechSector.match(new RegExp(`\\b${kd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i'));
+            if (match && match.index < firstDeptStart) {
+                firstDeptStart = match.index;
+            }
+        }
+
+        // Find the earliest country
+        for (const kc of knownCountries) {
+            const match = contentAfterTechSector.match(new RegExp(`\\b${kc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i'));
+            if (match && match.index < firstCountryStart) {
+                firstCountryStart = match.index;
+            }
+        }
+
+        const inventorsEndIndex = Math.min(firstDeptStart, firstCountryStart, contentAfterTechSector.length);
+
+        let inventorsRaw = contentAfterTechSector.substring(0, inventorsEndIndex).trim();
+        let remainingContentAfterInventors = contentAfterTechSector.substring(inventorsEndIndex).trim();
+
+        // Process inventorsRaw: simply split by common list separators
+        if (inventorsRaw) {
+            // Split by semicolons, then further split by commas or "and" if they are used as separators within a name string
+            let tempInventors = [];
+            let primaryParts = inventorsRaw.split(/;\s*/);
+            for (let part of primaryParts) {
+                // Split sub-parts by commas or " and "
+                let subParts = part.split(/,\s*|\s+and\s+/);
+                tempInventors.push(...subParts.map(s => s.trim()).filter(Boolean));
+            }
+            data.inventors = [...new Set(tempInventors)].join('; '); // Remove duplicates and join
+        }
+
+        // Process remainingContentAfterInventors for departments and country
+        let currentContentForDeptCountry = remainingContentAfterInventors;
+        let tempDepartments = new Set();
+        let finalCountry = '';
+
+        // Extract departments from the remaining content
+        for (const kd of knownDepartments) {
             const deptRegex = new RegExp(`\\b${kd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
             let match;
             const currentDeptRegex = new RegExp(deptRegex.source, 'gi');
-            while ((match = currentDeptRegex.exec(postTechSectorContent)) !== null) {
-                postZoneSegments.push({
-                    text: match[0],
-                    startIndex: match.index,
-                    endIndex: match.index + match[0].length,
-                    type: 'department',
-                    canonical: kd
-                });
+            while ((match = currentDeptRegex.exec(currentContentForDeptCountry)) !== null) {
+                tempDepartments.add(kd);
+                // Remove the found department to avoid re-matching and clean string for country
+                currentContentForDeptCountry = currentContentForDeptCountry.replace(match[0], '').trim();
+                // Consolidate any new multiple spaces after removal
+                currentContentForDeptCountry = currentContentForDeptCountry.replace(/\s+/g, ' ').trim();
             }
         }
-
-        // Identify Inventors within postTechSectorContent - Removed isExcludedWord check
-        // English name pattern: more robust for complex names including those with middle initials or multiple parts.
-        // It now ensures full capture of "Last, First Middle" or "First Middle Last" and handles hyphens/periods.
-        // It's also adjusted to be more robust with spacing and newlines within names.
-        const englishNamePattern = /\b(?:[A-Z][a-zA-Z\.'\-]+(?:[\s\n]*[A-Z][a-zA-Z\.'\-]+){0,3}|[A-Z][a-zA-Z\.'\-]+,\s*(?:[A-Z][a-zA-Z\.'\-]+\s*){1,3})\b/g;
-
-        // Chinese name pattern: targets 2-4 Chinese characters, now without consuming trailing delimiters
-        const chineseNamePattern = /([\u4e00-\u9fa5]{2,4})/g;
-
-
-        let inventorMatch;
-        // Process English names
-        const currentEnglishNamePattern = new RegExp(englishNamePattern.source, 'g');
-        while ((inventorMatch = currentEnglishNamePattern.exec(postTechSectorContent)) !== null) {
-            const potentialInventor = inventorMatch[0].trim(); // Use full match as per new logic
-            // No isExcludedWord(potentialInventor) check as per user's golden rule for post-tech-sector content
-            if (potentialInventor.length > 2 &&
-                !knownDepartments.some(kd => potentialInventor.includes(kd)) &&
-                !knownTechSectors.some(ts => potentialInventor.includes(ts)) &&
-                !/^\d+[\s\S]*$/.test(potentialInventor) && // Does not start with numbers
-                !/^[A-Z0-9]{2,}\d+$/.test(potentialInventor) && // Not just an ID (e.g., patent numbers)
-                potentialInventor.trim() !== '' // Ensure it's not empty after trim
-            ) {
-                postZoneSegments.push({
-                    text: inventorMatch[0], // Mark full matched text
-                    startIndex: inventorMatch.index,
-                    endIndex: inventorMatch.index + inventorMatch[0].length,
-                    type: 'inventor',
-                    canonical: potentialInventor
-                });
-            }
-        }
-
-        // Process Chinese names
-        const currentChineseNamePattern = new RegExp(chineseNamePattern.source, 'g');
-        while ((inventorMatch = currentChineseNamePattern.exec(postTechSectorContent)) !== null) {
-            const potentialInventor = inventorMatch[1].trim(); // Use group 1 for actual name
-            // No isExcludedWord(potentialInventor) check as per user's golden rule for post-tech-sector content
-            if (potentialInventor.length >= 2 && potentialInventor.length <= 4 &&
-                !knownDepartments.some(kd => potentialInventor.includes(kd)) &&
-                !knownTechSectors.some(ts => potentialInventor.includes(ts)) &&
-                potentialInventor.trim() !== '' // Ensure it's not empty after trim
-            ) {
-                postZoneSegments.push({
-                    text: inventorMatch[1], // Text to mark
-                    startIndex: inventorMatch.index,
-                    endIndex: inventorMatch.index + inventorMatch[1].length, // Length of captured group
-                    type: 'inventor',
-                    canonical: potentialInventor
-                });
-            }
-        }
-
-        // Identify Countries within postTechSectorContent
-        const sortedCountries = [...knownCountries].sort((a, b) => b.length - a.length); // Longest first for greedy matching
-        for (const kc of sortedCountries) {
-            const countryRegex = new RegExp(`\\b${kc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-            let match;
-            const currentCountryRegex = new RegExp(countryRegex.source, 'gi');
-            while ((match = currentCountryRegex.exec(postTechSectorContent)) !== null) {
-                postZoneSegments.push({
-                    text: match[0],
-                    startIndex: match.index,
-                    endIndex: match.index + match[0].length,
-                    type: 'country',
-                    canonical: kc
-                });
-            }
-        }
-
-        console.log('Post-Tech Sector Zone Raw Segments:', postZoneSegments);
-
-        // Sort segments within post-tech sector zone by position and priority
-        // Tech Sector (3) > Department (2) > Inventor (1) > Country (0)
-        postZoneSegments.sort((a, b) => {
-            if (a.startIndex !== b.startIndex) return a.startIndex - b.startIndex;
-            const typePriority = { 'techSector': 3, 'department': 2, 'inventor': 1, 'country': 0 };
-            return typePriority[b.type] - typePriority[a.type];
-        });
-
-        // Process segments in sorted order and mark used characters in post-zone
-        const tempInventors = new Set();
-        const tempDepartments = new Set();
-        let finalCountry = ''; // To hold the single country found
-
-        for (const segment of postZoneSegments) {
-            let isOverlappingAlreadyMarked = false;
-            for (let i = segment.startIndex; i < segment.endIndex; i++) {
-                if (i < charUsedPostZone.length && charUsedPostZone[i]) {
-                    isOverlappingAlreadyMarked = true;
-                    break;
-                }
-            }
-
-            if (!isOverlappingAlreadyMarked) {
-                markCharsUsedInPostZone(segment.startIndex, segment.endIndex);
-
-                if (segment.type === 'department') {
-                    tempDepartments.add(segment.canonical);
-                } else if (segment.type === 'inventor') {
-                    tempInventors.add(segment.canonical);
-                } else if (segment.type === 'country') {
-                    // Capture the first country found and stop looking for more
-                    if (!finalCountry) {
-                        finalCountry = segment.canonical;
-                    }
-                }
-                // techSector is already handled
-            } else {
-                console.log(`Post-Zone Segment "${segment.text}" (Type: ${segment.type}) at [${segment.startIndex}, ${segment.endIndex}] skipped due to overlap.`);
-            }
-        }
-
-        // Finalize data fields from temp sets for this zone
-        data.inventors = [...tempInventors].join('; ').replace(/;+/g, ';').replace(/;\s*$/, '').trim();
         data.department = [...tempDepartments].join('; ').replace(/;+/g, ';').replace(/;\s*$/, '').trim();
-        data.countryRegion = finalCountry; // Assign the extracted country
+
+        // Extract country from the now further reduced content
+        for (const kc of knownCountries) {
+            const countryRegex = new RegExp(`\\b${kc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+            if (countryRegex.test(currentContentForDeptCountry)) {
+                finalCountry = kc;
+                break; // Assuming only one country
+            }
+        }
+        data.countryRegion = finalCountry;
 
     } // End if (postTechSectorContent) block
 
