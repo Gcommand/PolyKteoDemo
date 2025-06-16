@@ -1,0 +1,2973 @@
+{
+  "name": "Gary's PolyU workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "patents_list",
+          "mode": "list",
+          "cachedResultName": "patents_list"
+        },
+        "returnAll": true,
+        "where": {
+          "values": [
+            {
+              "column": "ai_summary",
+              "condition": "IS NULL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -2760,
+        280
+      ],
+      "id": "86bfcce8-6cdf-4953-9f2c-bee47e8ee702",
+      "name": "Postgres"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2460,
+        280
+      ],
+      "id": "fe8d339e-52f1-4cb3-a872-e2d0546e6618",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        640
+      ],
+      "id": "29d09432-3850-47ea-a9aa-8c8a9eecd8b7",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f96a1f42-ea7c-47f9-8acd-02d080577f06",
+              "name": "sys_id",
+              "value": "={{ $json.sys_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d8ea39a3-3456-41a6-8e36-252e9d54ff0e",
+              "name": "official_title",
+              "value": "={{ $json.official_title }}",
+              "type": "string"
+            },
+            {
+              "id": "77750dc3-d3b5-4a0f-b0bc-82f54d9dd68a",
+              "name": "tech_sector",
+              "value": "={{ $json.tech_sector }}",
+              "type": "string"
+            },
+            {
+              "id": "ec466413-25f1-4989-a2d8-c33e7fbf2701",
+              "name": "inventor",
+              "value": "={{ $json.inventor }}",
+              "type": "string"
+            },
+            {
+              "id": "68b0edac-81eb-438e-a3e5-e15b65ae759c",
+              "name": "department",
+              "value": "={{ $json.department }}",
+              "type": "string"
+            },
+            {
+              "id": "1b84decf-13ae-4eee-8a3c-4995ff123bd8",
+              "name": "country_region",
+              "value": "={{ $json.country_region }}",
+              "type": "string"
+            },
+            {
+              "id": "9a64d432-1c18-443e-bf3e-c27343c0a719",
+              "name": "google_patent_link",
+              "value": "={{ $json.google_patent_link }}",
+              "type": "string"
+            },
+            {
+              "id": "37f0c12b-b686-4074-93b9-2e5e8b469346",
+              "name": "created_dt",
+              "value": "={{ $json.created_dt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2240,
+        380
+      ],
+      "id": "87abb2d9-6f4d-420e-8b42-bf97d55922fb",
+      "name": "Cache Info"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.google_patent_link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2040,
+        400
+      ],
+      "id": "b2076453-57e6-4b8c-b1d8-984710ee705d",
+      "name": "Get Patent Link"
+    },
+    {
+      "parameters": {
+        "content": "## Create AI Summary For Each Patent",
+        "height": 780,
+        "width": 2580
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3000,
+        120
+      ],
+      "typeVersion": 1,
+      "id": "4d6f1413-9be1-44c8-9559-6702a1754ad1",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        600
+      ],
+      "id": "4a2679ec-ffaf-4aff-ba8e-e6464654cc96",
+      "name": "OpenRouter Chat Model"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8147dc6e-f95a-4d2b-bbeb-1f12f087c163",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1140,
+        400
+      ],
+      "id": "602f47fa-0fa4-45c5-9b46-dd190335481d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a quality assurance agent to check if the input summary work done by another agent is matching the required standard. If it yes, return the True, else False.\n\n### Required Format:\n- Present it in title and detailed summary\n- Generating summary from patent/technology related documents\n- Showing number of search results\n- Provide reference links, and retrieving relevant patents/technologies based on user queries.\n- Present it in Traditional Chinese and English\n\n\n### Example of good summary\n<Example of good summary>\n\"# Title: 空調冷凍水流量控制系統及方法的專利概述和技術摘要 \\n\\n#### Reference Links:\\n\\n1. [Download PDF](https://patentimages.storage.googleapis.com/3b/1d/76/e7afcbea094a53/CN102889664B.pdf)\\n2. [Espacenet](https://worldwide.espacenet.com/publicationDetails/biblio?CC=CN&NR=102889664B&KC=B&FT=D)\\n3. [Global Dossier](https://globaldossier.uspto.gov/result/application/CN/201110202193/1)\\n4. [Discuss on StackExchange](https://patents.stackexchange.com/questions/tagged/CN102889664B)\\n5. [Google Patent](https://patents.google.com/patent/CN102889664B)\\n\\n## Summary:\\n\\n#### English: The patent CN102889664B details a water flow control system and method specifically designed for central air conditioning systems using secondary pumping circuits. It includes several steps to initiate the system and continuously regulate water flow through the detection and measurement of pressure differentials at various points in the system. The main objective is to prevent reverse flow in bypass pipes, ensuring the water supply to the user side does not exceed the return flow to the main unit, ultimately improving efficiency and energy conservation. The original assignee of the patent is Hong Kong Polytechnic University. The patent was filed on July 19, 2011, and published on December 10, 2014. For this patent, there are multiple related publications and legal events, indicating ongoing relevance in the industry.\\n\\n#### Number of Search Results:\\n- Total patents found: 1\\n\\n### 中文:\\n本專利CN102889664B詳細介紹了一種專為中央空調系統設計的水流量控制系統和方法，涉及次級泵循環。該系統包括幾個步驟，以啟動系統並不斷調節水流，通過在系統不同位置檢測和測量壓差來進行。其主要目的是防止旁通管中的逆流，確保向用戶側供水不超過與主機之間的回流，從而提高效率和節能。該專利的原始受讓方為香港理工大學，於2011年7月19日申請，並於2014年12月10日公布。針對此專利，還有多個相關公報和法律事件，顯示其在行業內的持續重要性。\\n\\n#### 搜尋結果數量:\\n- 總專利數量: 1\"\n</Example of good summary>\n\n### Below is the summary done by another agent\n<Work Done By Another Agent>\n{{ $json.text }}\n</Work Done By Another Agent>\n",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -1480,
+        400
+      ],
+      "id": "d865f2ab-6165-41ed-9ab6-20027846089b",
+      "name": "Quality Assurance Agent",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Help me summarize the below context:\n\n#Format:\n- Present it in title and detailed summary:\n- Generating summary from patent/technology related documents\n- Showing number of search results\n- Provide reference links, and retrieving relevant patents/technologies based on user queries.\n- Present it in Traditional Chinese and English\n\n### Example of summary\n<Example of good summary>\n\"# Title: 空調冷凍水流量控制系統及方法的專利概述和技術摘要 \\n\\n#### Reference Links:\\n\\n1. [Download PDF](https://patentimages.storage.googleapis.com/3b/1d/76/e7afcbea094a53/CN102889664B.pdf)\\n2. [Espacenet](https://worldwide.espacenet.com/publicationDetails/biblio?CC=CN&NR=102889664B&KC=B&FT=D)\\n3. [Global Dossier](https://globaldossier.uspto.gov/result/application/CN/201110202193/1)\\n4. [Discuss on StackExchange](https://patents.stackexchange.com/questions/tagged/CN102889664B)\\n5. [Google Patent](https://patents.google.com/patent/CN102889664B)\\n\\n## Summary:\\n\\n#### English: The patent CN102889664B details a water flow control system and method specifically designed for central air conditioning systems using secondary pumping circuits. It includes several steps to initiate the system and continuously regulate water flow through the detection and measurement of pressure differentials at various points in the system. The main objective is to prevent reverse flow in bypass pipes, ensuring the water supply to the user side does not exceed the return flow to the main unit, ultimately improving efficiency and energy conservation. The original assignee of the patent is Hong Kong Polytechnic University. The patent was filed on July 19, 2011, and published on December 10, 2014. For this patent, there are multiple related publications and legal events, indicating ongoing relevance in the industry.\\n\\n#### Number of Search Results:\\n- Total patents found: 1\\n\\n### 中文:\\n本專利CN102889664B詳細介紹了一種專為中央空調系統設計的水流量控制系統和方法，涉及次級泵循環。該系統包括幾個步驟，以啟動系統並不斷調節水流，通過在系統不同位置檢測和測量壓差來進行。其主要目的是防止旁通管中的逆流，確保向用戶側供水不超過與主機之間的回流，從而提高效率和節能。該專利的原始受讓方為香港理工大學，於2011年7月19日申請，並於2014年12月10日公布。針對此專利，還有多個相關公報和法律事件，顯示其在行業內的持續重要性。\\n\\n#### 搜尋結果數量:\\n- 總專利數量: 1\"\n</Example of good summary>\n\n#Summary the below Web html:\n<Web HTML>\n{{ $json.data }}\n</Web HTML>"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -1860,
+        400
+      ],
+      "id": "fad593c0-ea40-482f-8fb8-20c1e9d4ab23",
+      "name": "Summarization Chain",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"output\": \"Boolean (True/False)\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -1300,
+        620
+      ],
+      "id": "b45db0df-6b2f-418f-8492-2f1da2a3ad45",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "patents_list",
+          "mode": "list",
+          "cachedResultName": "patents_list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sys_id": "={{ $('Cache Info').item.json.sys_id }}",
+            "ai_summary": "={{ $('Summarization Chain').item.json.text }}"
+          },
+          "matchingColumns": [
+            "sys_id"
+          ],
+          "schema": [
+            {
+              "id": "sys_id",
+              "displayName": "sys_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "official_title",
+              "displayName": "official_title",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "tech_sector",
+              "displayName": "tech_sector",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "inventor",
+              "displayName": "inventor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "country_region",
+              "displayName": "country_region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "google_patent_link",
+              "displayName": "google_patent_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ai_summary",
+              "displayName": "ai_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "embedding",
+              "displayName": "embedding",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "options",
+              "canBeUsedToMatch": true,
+              "options": [],
+              "removed": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_dt",
+              "displayName": "created_dt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -680,
+        660
+      ],
+      "id": "41cc69ad-81ba-4bb8-8bb4-a3da791f21b2",
+      "name": "Update AI Summary"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -1900,
+        640
+      ],
+      "id": "6a29a191-9628-45e5-9a05-aa3559fd2ccd",
+      "name": "OpenRouter Chat Model1"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "patents_list",
+          "mode": "list",
+          "cachedResultName": "patents_list"
+        },
+        "returnAll": true,
+        "where": {
+          "values": [
+            {
+              "column": "ai_summary",
+              "condition": "IS NOT NULL"
+            },
+            {
+              "column": "embedding",
+              "condition": "IS NOT NULL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -2920,
+        1000
+      ],
+      "id": "166714ce-1e34-4502-a117-e72e99d439a5",
+      "name": "Postgres1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2560,
+        1000
+      ],
+      "id": "d05130e7-097e-4004-9da6-e99b9ec7e964",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f96a1f42-ea7c-47f9-8acd-02d080577f06",
+              "name": "sys_id",
+              "value": "={{ $json.sys_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d8ea39a3-3456-41a6-8e36-252e9d54ff0e",
+              "name": "official_title",
+              "value": "={{ $json.official_title }}",
+              "type": "string"
+            },
+            {
+              "id": "77750dc3-d3b5-4a0f-b0bc-82f54d9dd68a",
+              "name": "tech_sector",
+              "value": "={{ $json.tech_sector }}",
+              "type": "string"
+            },
+            {
+              "id": "ec466413-25f1-4989-a2d8-c33e7fbf2701",
+              "name": "inventor",
+              "value": "={{ $json.inventor }}",
+              "type": "string"
+            },
+            {
+              "id": "68b0edac-81eb-438e-a3e5-e15b65ae759c",
+              "name": "department",
+              "value": "={{ $json.department }}",
+              "type": "string"
+            },
+            {
+              "id": "1b84decf-13ae-4eee-8a3c-4995ff123bd8",
+              "name": "country_region",
+              "value": "={{ $json.country_region }}",
+              "type": "string"
+            },
+            {
+              "id": "9a64d432-1c18-443e-bf3e-c27343c0a719",
+              "name": "google_patent_link",
+              "value": "={{ $json.google_patent_link }}",
+              "type": "string"
+            },
+            {
+              "id": "37f0c12b-b686-4074-93b9-2e5e8b469346",
+              "name": "created_dt",
+              "value": "={{ $json.created_dt }}",
+              "type": "string"
+            },
+            {
+              "id": "4a3d6425-2028-4a9c-9528-7901484f8229",
+              "name": "ai_summary",
+              "value": "={{ $json.ai_summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2340,
+        1100
+      ],
+      "id": "05ffc1a3-6af5-41de-ab1d-def852095d79",
+      "name": "Cache Info1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.google_patent_link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2140,
+        1120
+      ],
+      "id": "f7940750-0df5-4080-9042-ca86fcb0b33d",
+      "name": "Get Patent Link1"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "value",
+              "cssSelector": "meta[itemprop=\"full\"]",
+              "returnValue": "attribute",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -1940,
+        1120
+      ],
+      "id": "4e884bf9-319c-4236-9b7c-aadc9eb674c3",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst urlList = items\n  .map((item) => item?.json?.value?.map((val) => val?.content))\n  .flat();\n\nreturn { urlList };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1720,
+        1120
+      ],
+      "id": "9c1ec6cc-f9e8-41b4-8842-e39e59d14b71",
+      "name": "Set Image URL"
+    },
+    {
+      "parameters": {
+        "jsCode": "var output = $('Cache Info1').first().json.ai_summary.split(\"#### Reference Links\");\nvar input = $input.first().json.urlList;\n\n// Format the image links\nvar imageLinksSection = \"<image_urls>\" + input.join(\", \") + \"</image_urls>\\n\\n\";\n\n// Reconstruct the output with image links in between\nvar finalOutput = output[0] + \"\\n\" + imageLinksSection + \"#### Reference Links\" + output[1];\n\nreturn { finalOutput };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1500,
+        1120
+      ],
+      "id": "9481e8b2-26e9-4d04-b06e-78fac5f59aab",
+      "name": "Add Back To AI Summary"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "patents_list",
+          "mode": "list",
+          "cachedResultName": "patents_list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sys_id": "={{ $('Cache Info1').item.json.sys_id }}",
+            "ai_summary": "={{ $json.finalOutput }}"
+          },
+          "matchingColumns": [
+            "sys_id"
+          ],
+          "schema": [
+            {
+              "id": "sys_id",
+              "displayName": "sys_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "official_title",
+              "displayName": "official_title",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "tech_sector",
+              "displayName": "tech_sector",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "inventor",
+              "displayName": "inventor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "country_region",
+              "displayName": "country_region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "google_patent_link",
+              "displayName": "google_patent_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ai_summary",
+              "displayName": "ai_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "embedding",
+              "displayName": "embedding",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "options",
+              "canBeUsedToMatch": true,
+              "options": [],
+              "removed": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_dt",
+              "displayName": "created_dt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -1240,
+        1120
+      ],
+      "id": "f0f94a79-f78b-4987-ab51-108a823e130d",
+      "name": "Update AI Summary1"
+    },
+    {
+      "parameters": {
+        "content": "## Update Image Url to AI summary",
+        "height": 460,
+        "width": 1940
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2960,
+        940
+      ],
+      "typeVersion": 1,
+      "id": "710fd3a7-ee76-4821-8ed9-4ed0e1e52082",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "patents_list",
+          "mode": "list",
+          "cachedResultName": "patents_list"
+        },
+        "returnAll": true,
+        "where": {
+          "values": [
+            {
+              "column": "ai_summary",
+              "condition": "IS NOT NULL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -2920,
+        1540
+      ],
+      "id": "594c20b0-b915-4472-8c97-454c18731051",
+      "name": "Postgres2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2560,
+        1540
+      ],
+      "id": "915c12f4-8578-40ad-a7ee-fd33eca5af9b",
+      "name": "Loop Over Items2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f96a1f42-ea7c-47f9-8acd-02d080577f06",
+              "name": "sys_id",
+              "value": "={{ $json.sys_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d8ea39a3-3456-41a6-8e36-252e9d54ff0e",
+              "name": "official_title",
+              "value": "={{ $json.official_title }}",
+              "type": "string"
+            },
+            {
+              "id": "77750dc3-d3b5-4a0f-b0bc-82f54d9dd68a",
+              "name": "tech_sector",
+              "value": "={{ $json.tech_sector }}",
+              "type": "string"
+            },
+            {
+              "id": "ec466413-25f1-4989-a2d8-c33e7fbf2701",
+              "name": "inventor",
+              "value": "={{ $json.inventor }}",
+              "type": "string"
+            },
+            {
+              "id": "68b0edac-81eb-438e-a3e5-e15b65ae759c",
+              "name": "department",
+              "value": "={{ $json.department }}",
+              "type": "string"
+            },
+            {
+              "id": "1b84decf-13ae-4eee-8a3c-4995ff123bd8",
+              "name": "country_region",
+              "value": "={{ $json.country_region }}",
+              "type": "string"
+            },
+            {
+              "id": "9a64d432-1c18-443e-bf3e-c27343c0a719",
+              "name": "google_patent_link",
+              "value": "={{ $json.google_patent_link }}",
+              "type": "string"
+            },
+            {
+              "id": "37f0c12b-b686-4074-93b9-2e5e8b469346",
+              "name": "created_dt",
+              "value": "={{ $json.created_dt }}",
+              "type": "string"
+            },
+            {
+              "id": "4a3d6425-2028-4a9c-9528-7901484f8229",
+              "name": "ai_summary",
+              "value": "={{ $json.ai_summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2340,
+        1640
+      ],
+      "id": "dde26bb9-9105-4b7d-bd6c-6e7318dabc9c",
+      "name": "Cache Info2"
+    },
+    {
+      "parameters": {
+        "jsCode": "var output = $('Cache Info2').first().json.ai_summary.split(\"#### Reference Links\");\n// var input = $input.first().json.urlList;\n\nvar official_title = $input.first().json.official_title;\nvar tech_sector = $input.first().json.tech_sector;\nvar inventor = $input.first().json.inventor;\nvar department = $input.first().json.department;\nvar country_region = $input.first().json.country_region;\n\n// Create metadata string\nvar metadataString = `official_title: ${official_title},\\n\\ntech_sector: ${tech_sector},\\n\\ninventor: ${inventor},\\n\\ndepartment: ${department},\\n\\ncountry_region: ${country_region}\\n\\n`;\n\n\n// Reconstruct the output with image links in between\nvar finalOutput = output[0] + \"\\n\" + metadataString + \"#### Reference Links\" + output[1];\n\nreturn { finalOutput };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1860,
+        1640
+      ],
+      "id": "0b954c91-07fd-4ddd-9700-7a015335a89f",
+      "name": "Add Back To AI Summary1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "patents_list",
+          "mode": "list",
+          "cachedResultName": "patents_list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sys_id": "={{ $('Cache Info2').item.json.sys_id }}",
+            "ai_summary": "={{ $json.finalOutput }}"
+          },
+          "matchingColumns": [
+            "sys_id"
+          ],
+          "schema": [
+            {
+              "id": "sys_id",
+              "displayName": "sys_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "official_title",
+              "displayName": "official_title",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "tech_sector",
+              "displayName": "tech_sector",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "inventor",
+              "displayName": "inventor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "country_region",
+              "displayName": "country_region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "google_patent_link",
+              "displayName": "google_patent_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ai_summary",
+              "displayName": "ai_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "embedding",
+              "displayName": "embedding",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "options",
+              "canBeUsedToMatch": true,
+              "options": [],
+              "removed": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_dt",
+              "displayName": "created_dt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -1540,
+        1660
+      ],
+      "id": "0e036f2e-6759-4c97-8880-f2673493ad66",
+      "name": "Update AI Summary2"
+    },
+    {
+      "parameters": {
+        "content": "## Update metadata to AI summary",
+        "height": 460,
+        "width": 1940
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2960,
+        1480
+      ],
+      "typeVersion": 1,
+      "id": "d84b373f-cfa1-466c-be5d-2c9d5e2d1967",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "patents_list",
+          "mode": "list",
+          "cachedResultName": "patents_list"
+        },
+        "returnAll": true,
+        "where": {
+          "values": [
+            {
+              "column": "ai_summary",
+              "condition": "IS NOT NULL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -2920,
+        2100
+      ],
+      "id": "587a669c-f69d-44ac-899d-a08efb1892e8",
+      "name": "Postgres3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2560,
+        2100
+      ],
+      "id": "39afc83c-e5d6-4708-84ea-b5fdc2eef5ef",
+      "name": "Loop Over Items3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f96a1f42-ea7c-47f9-8acd-02d080577f06",
+              "name": "sys_id",
+              "value": "={{ $json.sys_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d8ea39a3-3456-41a6-8e36-252e9d54ff0e",
+              "name": "official_title",
+              "value": "={{ $json.official_title }}",
+              "type": "string"
+            },
+            {
+              "id": "77750dc3-d3b5-4a0f-b0bc-82f54d9dd68a",
+              "name": "tech_sector",
+              "value": "={{ $json.tech_sector }}",
+              "type": "string"
+            },
+            {
+              "id": "ec466413-25f1-4989-a2d8-c33e7fbf2701",
+              "name": "inventor",
+              "value": "={{ $json.inventor }}",
+              "type": "string"
+            },
+            {
+              "id": "68b0edac-81eb-438e-a3e5-e15b65ae759c",
+              "name": "department",
+              "value": "={{ $json.department }}",
+              "type": "string"
+            },
+            {
+              "id": "1b84decf-13ae-4eee-8a3c-4995ff123bd8",
+              "name": "country_region",
+              "value": "={{ $json.country_region }}",
+              "type": "string"
+            },
+            {
+              "id": "9a64d432-1c18-443e-bf3e-c27343c0a719",
+              "name": "google_patent_link",
+              "value": "={{ $json.google_patent_link }}",
+              "type": "string"
+            },
+            {
+              "id": "37f0c12b-b686-4074-93b9-2e5e8b469346",
+              "name": "created_dt",
+              "value": "={{ $json.created_dt }}",
+              "type": "string"
+            },
+            {
+              "id": "4a3d6425-2028-4a9c-9528-7901484f8229",
+              "name": "ai_summary",
+              "value": "={{ $json.ai_summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2340,
+        2200
+      ],
+      "id": "2d71f377-b88a-493f-a8f7-646d043e329c",
+      "name": "Cache Info3"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "patents_list",
+          "mode": "list",
+          "cachedResultName": "patents_list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sys_id": "={{ $('Cache Info3').item.json.sys_id }}",
+            "ai_short_summary": "={{ $json.text }}"
+          },
+          "matchingColumns": [
+            "sys_id"
+          ],
+          "schema": [
+            {
+              "id": "sys_id",
+              "displayName": "sys_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "official_title",
+              "displayName": "official_title",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "tech_sector",
+              "displayName": "tech_sector",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "inventor",
+              "displayName": "inventor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "country_region",
+              "displayName": "country_region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "google_patent_link",
+              "displayName": "google_patent_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ai_summary",
+              "displayName": "ai_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "embedding",
+              "displayName": "embedding",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "options",
+              "canBeUsedToMatch": true,
+              "options": [],
+              "removed": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_dt",
+              "displayName": "created_dt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "is_tech",
+              "displayName": "is_tech",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ai_short_summary",
+              "displayName": "ai_short_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -1580,
+        2220
+      ],
+      "id": "a018b290-80bb-461a-8aef-effb36f832f1",
+      "name": "Update AI Summary3"
+    },
+    {
+      "parameters": {
+        "content": "## Update short summary",
+        "height": 460,
+        "width": 1940
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2960,
+        2040
+      ],
+      "typeVersion": 1,
+      "id": "c9928bfd-442b-4821-af56-6d8123a29547",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Help me summarize the below patents or technology into one sentence for other to quick glance what it is about, application, industry usage.\n\nMake sure the sentence is in both English and Chinese\n<Example>\nA lightweight rehabilitation device combining functional electrical stimulation and artificial muscle-driven exoskeleton technology applied in healthcare for assisting patients’ muscle training and recovery.\n一种结合功能性电刺激与人工肌肉驱动外骨骼技术的轻量级康复装置应用于医疗健康领域的肌肉训练与康复辅助\n</Example>\n\n<Content>\n {{ $json.ai_summary }}\n</Content>"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        -2080,
+        2200
+      ],
+      "id": "dfd54156-82b8-4ffa-80b8-49b362ca3204",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4.1-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -2100,
+        2460
+      ],
+      "id": "c605da71-7540-4cde-b666-acb103c9c8a3",
+      "name": "OpenRouter Chat Model2"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "patents_list",
+          "mode": "list",
+          "cachedResultName": "patents_list"
+        },
+        "returnAll": true,
+        "where": {
+          "values": [
+            {
+              "column": "ai_summary",
+              "condition": "IS NOT NULL"
+            },
+            {
+              "column": "embedding",
+              "condition": "IS NOT NULL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -680,
+        1260
+      ],
+      "id": "c015fc1c-1844-4451-9e73-f823d137ceae",
+      "name": "Postgres4"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -320,
+        1260
+      ],
+      "id": "5fc153ef-de0b-4e60-a935-c61158ed0fc4",
+      "name": "Loop Over Items4"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f96a1f42-ea7c-47f9-8acd-02d080577f06",
+              "name": "sys_id",
+              "value": "={{ $json.sys_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d8ea39a3-3456-41a6-8e36-252e9d54ff0e",
+              "name": "official_title",
+              "value": "={{ $json.official_title }}",
+              "type": "string"
+            },
+            {
+              "id": "77750dc3-d3b5-4a0f-b0bc-82f54d9dd68a",
+              "name": "tech_sector",
+              "value": "={{ $json.tech_sector }}",
+              "type": "string"
+            },
+            {
+              "id": "ec466413-25f1-4989-a2d8-c33e7fbf2701",
+              "name": "inventor",
+              "value": "={{ $json.inventor }}",
+              "type": "string"
+            },
+            {
+              "id": "68b0edac-81eb-438e-a3e5-e15b65ae759c",
+              "name": "department",
+              "value": "={{ $json.department }}",
+              "type": "string"
+            },
+            {
+              "id": "1b84decf-13ae-4eee-8a3c-4995ff123bd8",
+              "name": "country_region",
+              "value": "={{ $json.country_region }}",
+              "type": "string"
+            },
+            {
+              "id": "9a64d432-1c18-443e-bf3e-c27343c0a719",
+              "name": "google_patent_link",
+              "value": "={{ $json.google_patent_link }}",
+              "type": "string"
+            },
+            {
+              "id": "37f0c12b-b686-4074-93b9-2e5e8b469346",
+              "name": "created_dt",
+              "value": "={{ $json.created_dt }}",
+              "type": "string"
+            },
+            {
+              "id": "4a3d6425-2028-4a9c-9528-7901484f8229",
+              "name": "ai_summary",
+              "value": "={{ $json.ai_summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -100,
+        1360
+      ],
+      "id": "5e7070e7-c958-4e69-9670-ef3a6102c887",
+      "name": "Cache Info4"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.google_patent_link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        100,
+        1380
+      ],
+      "id": "25512bdb-380a-45c1-9022-abb2d9bdfaa2",
+      "name": "Get Patent Link2"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "assignees",
+              "cssSelector": "dd[itemprop=\"assigneeCurrent\"]",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        1380
+      ],
+      "id": "1230b386-f91b-42e0-b7d1-64e56832c5cf",
+      "name": "HTML1"
+    },
+    {
+      "parameters": {
+        "content": "## Update Assignee :)",
+        "height": 460,
+        "width": 1940
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -720,
+        1200
+      ],
+      "typeVersion": 1,
+      "id": "24e05596-f771-4d21-90e3-8275ffd6de70",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH ins_assignee AS (\n    INSERT INTO public.assignees (assignee_name)\n    VALUES ('{{ $json.assignees }}') -- Replace with the actual assignee name\n    ON CONFLICT (assignee_name) DO NOTHING\n    RETURNING assignee_id\n)\nINSERT INTO public.patent_assignees (patent_id, assignee_id)\nSELECT\n    '{{ $('Cache Info4').item.json.sys_id }}', -- Replace with the actual patent ID\n    COALESCE(\n        (SELECT assignee_id FROM ins_assignee),\n        (SELECT assignee_id FROM public.assignees WHERE assignee_name = '{{ $json.assignees }}') -- Replace with the actual assignee name\n    );",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1020,
+        1380
+      ],
+      "id": "3c562665-c57a-4468-899a-cad1e64fb281",
+      "name": "Update assignees data",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "assignees",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        840,
+        1380
+      ],
+      "id": "1674879a-a6c0-4b08-8f17-93082ca6adda",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9f1c2c02-220f-40e6-bfaa-da62710cad93",
+              "leftValue": "={{ $json.assignees.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        1440
+      ],
+      "id": "eef7406b-b995-4edb-82de-adbeb6679d40",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst assignees = items\n  .map((item) => item?.json?.assignees?.map((val) => val))\n  .flat();\n\nreturn { assignees };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        1380
+      ],
+      "id": "605b9203-4b22-4b39-b6ac-79acf37886d3",
+      "name": "Map reduce for what?"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "patents_list",
+          "mode": "list",
+          "cachedResultName": "patents_list"
+        },
+        "returnAll": true,
+        "where": {
+          "values": [
+            {
+              "column": "ai_summary",
+              "condition": "IS NOT NULL"
+            },
+            {
+              "column": "embedding",
+              "condition": "IS NOT NULL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -480,
+        1940
+      ],
+      "id": "01853cee-cea8-4ff1-a4b8-78a434a8e47a",
+      "name": "Postgres5"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -120,
+        1940
+      ],
+      "id": "e3414ac3-504f-453c-adb3-a5db1b93ae32",
+      "name": "Loop Over Items5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f96a1f42-ea7c-47f9-8acd-02d080577f06",
+              "name": "sys_id",
+              "value": "={{ $json.sys_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d8ea39a3-3456-41a6-8e36-252e9d54ff0e",
+              "name": "official_title",
+              "value": "={{ $json.official_title }}",
+              "type": "string"
+            },
+            {
+              "id": "77750dc3-d3b5-4a0f-b0bc-82f54d9dd68a",
+              "name": "tech_sector",
+              "value": "={{ $json.tech_sector }}",
+              "type": "string"
+            },
+            {
+              "id": "ec466413-25f1-4989-a2d8-c33e7fbf2701",
+              "name": "inventor",
+              "value": "={{ $json.inventor }}",
+              "type": "string"
+            },
+            {
+              "id": "68b0edac-81eb-438e-a3e5-e15b65ae759c",
+              "name": "department",
+              "value": "={{ $json.department }}",
+              "type": "string"
+            },
+            {
+              "id": "1b84decf-13ae-4eee-8a3c-4995ff123bd8",
+              "name": "country_region",
+              "value": "={{ $json.country_region }}",
+              "type": "string"
+            },
+            {
+              "id": "9a64d432-1c18-443e-bf3e-c27343c0a719",
+              "name": "google_patent_link",
+              "value": "={{ $json.google_patent_link }}",
+              "type": "string"
+            },
+            {
+              "id": "37f0c12b-b686-4074-93b9-2e5e8b469346",
+              "name": "created_dt",
+              "value": "={{ $json.created_dt }}",
+              "type": "string"
+            },
+            {
+              "id": "4a3d6425-2028-4a9c-9528-7901484f8229",
+              "name": "ai_summary",
+              "value": "={{ $json.ai_summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        100,
+        2040
+      ],
+      "id": "ef772b34-5db8-4bb3-ba4d-32a184913a85",
+      "name": "Cache Info5"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.google_patent_link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        2060
+      ],
+      "id": "e7bd6554-bab4-4c0d-af10-ce7f510546dd",
+      "name": "Get Patent Link3"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "cn_tr",
+              "cssSelector": "=tr[itemprop=\"countryStatus\"]",
+              "returnValue": "html",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        500,
+        2060
+      ],
+      "id": "fe6486dc-b265-474b-a814-20632c6b4fd3",
+      "name": "HTML2"
+    },
+    {
+      "parameters": {
+        "content": "## Update is_CN_applied :O",
+        "height": 460,
+        "width": 1940
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -520,
+        1880
+      ],
+      "typeVersion": 1,
+      "id": "5f146e25-157b-4831-b375-f8a2c92352fa",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9f1c2c02-220f-40e6-bfaa-da62710cad93",
+              "leftValue": "={{ $json.cn_tr.toJsonString() }}",
+              "rightValue": ">CN<",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "f2f41804-2772-432f-9f27-1cabc1cf2e26",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "82a3fbc6-2c38-41df-87e5-b3a5f1b74b3f",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        780,
+        2060
+      ],
+      "id": "e9389f06-6691-473d-87a0-3727f04a69b6",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "filePath": "/tmp/all_patent_list_from_polyu.pdf"
+      },
+      "name": "Read Binary File",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "position": [
+        60,
+        640
+      ],
+      "typeVersion": 1,
+      "id": "e78364c6-6830-43e1-9a2d-c9e936ee1688"
+    },
+    {
+      "parameters": {},
+      "name": "Read PDF",
+      "type": "n8n-nodes-base.readPDF",
+      "position": [
+        280,
+        640
+      ],
+      "typeVersion": 1,
+      "id": "67bb42f2-fdbd-4219-8998-4f88e80a1688"
+    },
+    {
+      "parameters": {
+        "batchSize": 50,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        900,
+        640
+      ],
+      "id": "b4f0a64a-b797-44e8-a0d8-c73654a3f005",
+      "name": "Loop Over Items6"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d8ea39a3-3456-41a6-8e36-252e9d54ff0e",
+              "name": "official_title",
+              "value": "={{ $json.officialTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "77750dc3-d3b5-4a0f-b0bc-82f54d9dd68a",
+              "name": "tech_sector",
+              "value": "={{ $json.techSector }}",
+              "type": "string"
+            },
+            {
+              "id": "ec466413-25f1-4989-a2d8-c33e7fbf2701",
+              "name": "inventor",
+              "value": "={{ $json.inventors }}",
+              "type": "string"
+            },
+            {
+              "id": "68b0edac-81eb-438e-a3e5-e15b65ae759c",
+              "name": "department",
+              "value": "={{ $json.department }}",
+              "type": "string"
+            },
+            {
+              "id": "1b84decf-13ae-4eee-8a3c-4995ff123bd8",
+              "name": "country_region",
+              "value": "={{ $json.countryRegion }}",
+              "type": "string"
+            },
+            {
+              "id": "9a64d432-1c18-443e-bf3e-c27343c0a719",
+              "name": "google_patent_link",
+              "value": "={{ $json.googlePatentLink }}",
+              "type": "string"
+            },
+            {
+              "id": "bf3fadf2-5f5e-4fb3-acff-9a8f6da93c32",
+              "name": "techSectorIds",
+              "value": "={{ $json.techSectorIds }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1080,
+        740
+      ],
+      "id": "ec1a7cb1-529d-40c0-90fa-cea773c7f0ac",
+      "name": "Cache Info6"
+    },
+    {
+      "parameters": {
+        "content": "## Read from PDF file :)",
+        "height": 460,
+        "width": 2000,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        500
+      ],
+      "typeVersion": 1,
+      "id": "51f6b566-b64d-4550-ba01-117724213d92",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    t1.sys_id\nFROM\n    (SELECT '{{ $json.google_patent_link }}' AS google_patent_link_to_check) AS incoming_data\nLEFT JOIN\n    public.patents_list t1 ON t1.google_patent_link = incoming_data.google_patent_link_to_check;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1300,
+        740
+      ],
+      "id": "fc4249b4-5c92-4fce-aa1f-19ac93604ab1",
+      "name": "Postgres6",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "kofKkYvT61G5MAFp",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e1ea34ee-322c-4eea-9155-26bbe793585a",
+              "leftValue": "={{ $json.sys_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1800,
+        740
+      ],
+      "id": "a8c5c9be-ded0-49fd-8e5f-15588135ece3",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1540,
+        540
+      ],
+      "id": "f0c51804-16f5-40fa-baad-e57837551c34",
+      "name": "Merge",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "googlePatentLink",
+              "renameField": true,
+              "outputFieldName": "alll_google_patent_link"
+            }
+          ]
+        },
+        "options": {
+          "mergeLists": true
+        }
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        780,
+        1000
+      ],
+      "id": "174513fa-1645-4954-8d14-c301e769692d",
+      "name": "Aggregate",
+      "alwaysOutputData": true,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const allTitles = $input.first().json.all_offcial_title; // Get the array of all titles\n\nif (!allTitles || !Array.isArray(allTitles)) {\n  return []; // Return empty if no valid array\n}\n\nconst titleCounts = {};\nconst duplicateTitles = {};\n\nallTitles.forEach(title => {\n  if (typeof title === 'string') { // Ensure it's a string for consistent counting\n    const normalizedTitle = title.trim().toLowerCase(); // Normalize for case-insensitivity\n    titleCounts[normalizedTitle] = (titleCounts[normalizedTitle] || 0) + 1;\n  }\n});\n\n// Identify titles that appear more than once\nfor (const title in titleCounts) {\n  if (titleCounts[title] > 1) {\n    duplicateTitles[title] = titleCounts[title];\n  }\n}\n\n// Prepare output for the next node\n// We want to return one item, with an array of detected duplicates\n// Each item in this array will be processed by Split Out Items\nconst outputItems = Object.keys(duplicateTitles).map(title => ({\n    json: {\n        officialTitle: title,\n        count: duplicateTitles[title]\n    }\n}));\n\nreturn [{\n    json: {\n        duplicatesList: outputItems\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        1000
+      ],
+      "id": "a3ddc80c-963e-4ab6-be37-3ce46663e9b7",
+      "name": "Code1",
+      "alwaysOutputData": true,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code element processes text extracted from a PDF to structure patent information.\n// It skips the initial title row and parses each patent entry into a separate item.\n\n// The input to this node is expected to be an item with a 'json' property containing a 'text' field.\n// Example Input: [{ json: { text: \"Official Title Tech Sector Inventor Department Country / Region\\nGoogle Patent Link\\n...\" } }]\n\nconst originalText = $input.first().json.text;\nconsole.log('Original Text Input:', originalText);\n\n// Define known entities for robust parsing.\n// These lists help in identifying and categorizing parts of the text.\nconst knownCountries = [\n    'China', 'United States Of America', 'Hong Kong', 'Europe', 'Germany',\n    'France', 'Italy', 'Netherlands', 'Romania', 'Serbia', 'Sweden',\n    'Switzerland', 'Turkey', 'United Kingdom', 'Hungary', 'Japan', 'Taiwan',\n    'India', 'Australia', 'Spain', 'Canada', 'Belgium', 'Macao', 'Malaysia',\n    'Singapore', 'Nepal'\n];\n\nconst knownDepartments = [\n    'FENG/BME', 'ASO/IC', 'FAST/ITC', 'FENG/EE', 'FENG/ISE', 'FENG/EIE',\n    'FHSS/HTI', 'FENG', 'ASO', 'FAST', 'FHSS', 'IC', 'ITC', 'BME', 'EE',\n    'EIE', 'ISE', 'HTI', 'FHSS/SO', 'FENG/COMP', 'FAST/AP', 'RIIPT/RIIPT',\n    'FENG/ME', 'FAST/ABCT', 'FCE/CEE', 'FCE/BSE', 'FCE/LSGI', 'SD/SD',\n    'FB/MM', 'LGT/LGT', 'FHSS/RS', 'FHSS/SN', 'PDO/PDO', 'DP/DP', 'OR/OR'\n];\n\nconst knownTechSectors = [\n    'Healthcare/Textile',\n    'Textile',\n    'Electrical & Manufacturing',\n    'Information and Communications Technology',\n    'Material Science',\n    'Foodtech/Biotech/Pharmaceutical',\n    'Construction',\n    'Positioning/Navigation/Timing',\n    'Other',\n    // Added the combined tech sector phrase as identified in the issue\n    'Electrical & Manufacturing/Information and Communications Technology',\n    'Healthcare' // Added 'Healthcare' as a standalone tech sector\n];\n\n// The excludeWordsSet and isExcludedWord function are no longer needed\n// because the parsing logic now strictly adheres to the input's positional\n// guarantee that only relevant fields appear after the tech sector.\n\n\n/**\n * Parses a single patent entry, which now receives already separated content and link.\n * It extracts country and then uses parseRemainingContentLineByLine for other fields.\n *\n * @param {string} contentPart The text containing title, tech sector, inventors, department, country.\n * @param {string} googlePatentLink The extracted and cleaned Google Patent Link.\n * @returns {object} An object containing the parsed patent fields.\n */\nfunction parsePatentEntry(contentPart, googlePatentLink) {\n    console.log('\\n--- Parsing new patent entry ---');\n    console.log('Content Part to Parse:', `\\n---\\n${contentPart}\\n---`);\n    console.log('Google Patent Link:', googlePatentLink);\n\n    const patent = {\n        officialTitle: '',\n        techSector: '',\n        inventors: '',\n        department: '',\n        countryRegion: '',\n        googlePatentLink: googlePatentLink // Link is already clean\n    };\n\n    // All parsing of title, tech sector, inventors, departments, and country\n    // will now happen inside parseRemainingContentLineByLine.\n    // This ensures strict adherence to the \"after tech sector\" rule for content.\n    const parsedData = parseRemainingContentLineByLine(contentPart);\n    Object.assign(patent, parsedData); // Merge the parsed fields into the patent object\n\n    console.log('Final Parsed Patent Data for this entry:', patent);\n    return patent;\n}\n\n/**\n * Parses the remaining content (after link and country extraction) for Title, Tech Sector, Inventors, and Department.\n * This version strictly adheres to the sequential order: Title -> Tech Sector -> Inventors/Departments/Country.\n * It ensures all content is accounted for and placed correctly using a character-by-character marking system.\n *\n * @param {string} contentStr The string containing the title, tech sector, inventors, department, and country information.\n * @returns {object} An object with officialTitle, techSector, inventors, department, and countryRegion properties.\n */\nfunction parseRemainingContentLineByLine(contentStr) {\n    console.log('\\n--- Starting parseRemainingContentLineByLine ---');\n    console.log('Content String for remaining parsing:', `\\n---\\n${contentStr}\\n---`);\n\n    let data = {\n        officialTitle: '',\n        techSector: '',\n        inventors: [],\n        department: [],\n        countryRegion: '' // Initialize country here\n    };\n\n    // --- Preprocessing: Normalize problematic newline splits and consolidate whitespace ---\n    // This happens here, ensuring fixes are applied to the single patent entry's content.\n    let processedContentStr = contentStr;\n    processedContentStr = processedContentStr.replace(/Electrical & Manufacturing\\/Information and\\nCommunications Technology/g, 'Electrical & Manufacturing/Information and Communications Technology');\n    \n    // General replacement of newlines that break up words/names.\n    // Replace newline that is preceded by a non-whitespace character and followed by a capitalized letter or a Chinese character\n    processedContentStr = processedContentStr.replace(/([a-zA-Z\\.'\\-,\\/])\\s*\\n([A-Z\\u4e00-\\u9fa5])/g, '$1 $2');\n    processedContentStr = processedContentStr.replace(/([a-zA-Z])\\n([a-zA-Z])/g, '$1 $2'); // Catches simple English word splits\n    processedContentStr = processedContentStr.replace(/([\\u4e00-\\u9fa5])\\n([\\u4e00-\\u9fa5])/g, '$1$2'); // Remove newline between Chinese characters\n    processedContentStr = processedContentStr.replace(/\\s+/g, ' '); // Consolidate multiple spaces\n    processedContentStr = processedContentStr.trim();\n\n\n    console.log('Content String after preprocessing (newlines for known phrases):', `\\n---\\n${processedContentStr}\\n---`);\n\n    let primaryTechSectorMatch = null;\n    let techSectorStartIndex = -1;\n    let techSectorEndIndex = -1;\n\n    // --- 1. Identify Primary Tech Sector from the entire processed string (HIGHEST PRIORITY) ---\n    // This will determine the hard boundary for splitting the content.\n    const sortedTechSectors = [...knownTechSectors].sort((a, b) => b.length - a.length); // Longest first for greedy matching\n    for (const ts of sortedTechSectors) {\n        // Use a word boundary (\\b) for the start and a negative lookahead (?!\\\\w) for the end.\n        // This allows matching \"Healthcare\" even if it's immediately followed by a space and a name.\n        const tsRegex = new RegExp(`\\\\b${ts.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}(?!\\\\w)`, 'gi'); // Using (?!\\\\w) again for robustness\n        let match;\n        const currentTsRegex = new RegExp(tsRegex.source, 'gi'); // New instance for .exec\n        while ((match = currentTsRegex.exec(processedContentStr)) !== null) {\n            // We want the *first* one encountered as the primary divider, globally.\n            // If multiple of the same length, earlier occurrence wins.\n            if (!primaryTechSectorMatch || match.index < primaryTechSectorMatch.index) {\n                primaryTechSectorMatch = match;\n                data.techSector = ts; // Assign to final data.techSector\n                techSectorStartIndex = match.index;\n                techSectorEndIndex = match.index + match[0].length;\n            }\n        }\n    }\n\n    let preTechSectorContent = '';\n    let postTechSectorContent = '';\n\n    if (primaryTechSectorMatch) {\n        preTechSectorContent = processedContentStr.substring(0, techSectorStartIndex).trim();\n        postTechSectorContent = processedContentStr.substring(techSectorStartIndex).trim();\n        console.log(`Hard Partitioned:`);\n        console.log(`  Pre-Tech Sector Content (for title): \"${preTechSectorContent}\"`);\n        console.log(`  Post-Tech Sector Content (for other fields): \"${postTechSectorContent}\"`);\n    } else {\n        // If no tech sector is found, the entire content becomes the \"pre\" part (title),\n        // and \"post\" part is empty. Other fields will remain empty unless found in title.\n        // This is a fallback to ensure no data loss, but indicates a parsing issue.\n        preTechSectorContent = processedContentStr;\n        console.warn('No known Tech Sector found. Treating entire content as pre-tech sector (title).');\n    }\n\n    // --- Assign Official Title from Pre-Tech Sector Content ---\n    data.officialTitle = preTechSectorContent.replace(/[\\s;]+/g, ' ').replace(/\\s+/g, ' ').trim();\n    // Post-process officialTitle to remove spaces between Chinese characters\n    data.officialTitle = data.officialTitle.replace(/([\\u4e00-\\u9fa5])\\s+([\\u4e00-\\u9fa5])/g, '$1$2');\n\n\n    // --- Now, Process Post-Tech Sector Content for Departments, Inventors, and Country ---\n    // Strict sequential parsing based on the golden rule\n    if (postTechSectorContent) {\n        let contentAfterTechSector = postTechSectorContent;\n        // Remove the tech sector itself from the front of this content\n        if (primaryTechSectorMatch) {\n            contentAfterTechSector = contentAfterTechSector.substring(primaryTechSectorMatch[0].length).trim();\n        }\n\n        let firstDeptStart = Infinity;\n        let firstCountryStart = Infinity;\n\n        // Find the earliest department\n        for (const kd of knownDepartments) {\n            const match = contentAfterTechSector.match(new RegExp(`\\\\b${kd.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\\\b`, 'i'));\n            if (match && match.index < firstDeptStart) {\n                firstDeptStart = match.index;\n            }\n        }\n\n        // Find the earliest country\n        for (const kc of knownCountries) {\n            const match = contentAfterTechSector.match(new RegExp(`\\\\b${kc.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\\\b`, 'i'));\n            if (match && match.index < firstCountryStart) {\n                firstCountryStart = match.index;\n            }\n        }\n\n        // The end index for the inventors block is the minimum of where the first department or country starts.\n        const inventorsEndIndex = Math.min(firstDeptStart, firstCountryStart, contentAfterTechSector.length);\n\n        let inventorsRaw = contentAfterTechSector.substring(0, inventorsEndIndex).trim();\n        let remainingContentAfterInventors = contentAfterTechSector.substring(inventorsEndIndex).trim();\n\n        // Process inventorsRaw: simply split by common list separators\n        if (inventorsRaw) {\n            // Split by semicolons, then further split by commas or \"and\" if they are used as separators within a name string\n            let tempInventors = [];\n            let primaryParts = inventorsRaw.split(/;\\s*|,\\s*and\\s*|\\s+and\\s+/); // Combine splitters\n            for (let part of primaryParts) {\n                part = part.trim();\n                if (part) {\n                    tempInventors.push(part);\n                }\n            }\n            data.inventors = [...new Set(tempInventors)].join('; '); // Remove duplicates and join\n            // Post-process inventors to remove spaces between Chinese characters\n            data.inventors = data.inventors.replace(/([\\u4e00-\\u9fa5])\\s+([\\u4e00-\\u9fa5])/g, '$1$2');\n        }\n\n        // Process remainingContentAfterInventors for departments and country\n        let currentContentForDeptCountry = remainingContentAfterInventors;\n        let tempDepartments = new Set();\n        let finalCountry = '';\n\n        // Extract departments from the remaining content\n        for (const kd of knownDepartments) {\n            const deptRegex = new RegExp(`\\\\b${kd.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\\\b`, 'gi');\n            let match;\n            const currentDeptRegex = new RegExp(deptRegex.source, 'gi');\n            while ((match = currentDeptRegex.exec(currentContentForDeptCountry)) !== null) {\n                tempDepartments.add(kd);\n                // Remove the found department to avoid re-matching and clean string for country\n                currentContentForDeptCountry = currentContentForDeptCountry.replace(match[0], '').trim();\n                // Consolidate any new multiple spaces after removal\n                currentContentForDeptCountry = currentContentForDeptCountry.replace(/\\s+/g, ' ').trim();\n            }\n        }\n        data.department = [...tempDepartments].join('; ').replace(/;+/g, ';').replace(/;\\s*$/, '').trim();\n\n        // Extract country from the now further reduced content\n        for (const kc of knownCountries) {\n            const countryRegex = new RegExp(`\\\\b${kc.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\\\b`, 'i');\n            if (countryRegex.test(currentContentForDeptCountry)) {\n                finalCountry = kc;\n                break; // Assuming only one country\n            }\n        }\n        data.countryRegion = finalCountry;\n\n    } // End if (postTechSectorContent) block\n\n    console.log('Final combined data after all processing:', data);\n    return data;\n}\n\n// 1. Remove the known header lines from the original text.\nconst headerPattern = /Official Title Tech Sector Inventor Department Country \\/ Region\\s*\\nGoogle Patent Link\\s*/g; // Global flag added\nconst cleanText = originalText.replace(headerPattern, '').trim();\nconsole.log('\\nText after header removal:', `\\n---\\n${cleanText}\\n---`);\n\n// 2. Split the cleaned text into individual patent entry objects {content, link} using a precise two-pass strategy.\nconst linkOnlyRegex = /(https:\\/\\/patents\\.google\\.\\n?com\\/patent\\/[A-Za-z0-9\\._\\/]+?\\d+[A-Za-z0-9]*(?:\\n[A-Za-z0-9\\._\\/]+?\\d+[A-Za-z0-9]*)*(?:B\\d*|A\\d*|C\\d*)?)/g;\nconst allLinkInfos = [];\nlet linkMatch;\nwhile ((linkMatch = linkOnlyRegex.exec(cleanText)) !== null) {\n    allLinkInfos.push({\n        fullMatch: linkMatch[0],\n        cleanedLink: linkMatch[0].replace(/\\s+/g, '').trim(),\n        startIndex: linkMatch.index,\n        endIndex: linkMatch.index + linkMatch[0].length\n    });\n}\n\nconst individualPatentEntries = [];\nlet currentSegmentStart = 0;\n\nfor (let i = 0; i < allLinkInfos.length; i++) {\n    const currentLinkInfo = allLinkInfos[i];\n\n    // The content for the current patent is from the end of the previous segment\n    // up to the start of the current patent's link.\n    const content = cleanText.substring(currentSegmentStart, currentLinkInfo.startIndex).trim();\n\n    individualPatentEntries.push({\n        content: content,\n        link: currentLinkInfo.cleanedLink\n    });\n\n    // The start of the next segment is immediately after the current link ends.\n    currentSegmentStart = currentLinkInfo.endIndex;\n}\n\n// Check if there's any remaining content after the last link (should ideally be empty)\nif (currentSegmentStart < cleanText.length) {\n    console.warn('Warning: Residual content found after the last patent link. This might indicate an unparsed record or extraneous text.');\n    // You might want to log this or handle it based on expected input behavior.\n}\n\nconsole.log('\\nIndividual Patent Entries detected (count: %d):', individualPatentEntries.length);\nindividualPatentEntries.forEach((entry, index) => {\n    console.log(`Entry ${index + 1}:`);\n    console.log(`  Content:\\n---\\n${entry.content}\\n---`);\n    console.log(`  Link: ${entry.link}`);\n});\n\n\n// 3. Process each individual patent entry to extract structured data.\nconst outputItems = [];\nfor (const entry of individualPatentEntries) {\n    const patentData = parsePatentEntry(entry.content, entry.link);\n    if (patentData) { // Only add if parsing was successful\n        outputItems.push({ json: patentData });\n    }\n}\n\n// Return the array of structured items.\nconsole.log('\\n--- Final Output Items (count: %d) ---', outputItems.length);\nconsole.log(JSON.stringify(outputItems, null, 2));\nreturn outputItems;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        640
+      ],
+      "id": "cb183b1e-1c6a-4474-87fd-58eada33f41f",
+      "name": "Code to parse records",
+      "alwaysOutputData": true,
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code processes the output from the \"n8n Patent Text Parser\"\n// to consolidate duplicate patent records.\n// Duplicates are identified by the 'googlePatentLink' field.\n// For duplicate records, the 'countryRegion' fields are merged into a single,\n// comma-separated string, ensuring uniqueness of country names.\n// This version also processes and consolidates tech sectors to prepare for\n// insertion into a patent_tech_sectors join table.\n\n// Expected input: An array of patent objects, where each object has a 'json' property\n// containing fields like 'officialTitle', 'techSector', 'inventors', 'department',\n// 'countryRegion', and 'googlePatentLink'.\n// Example Input: [{ json: { /* patent data */ } }, { json: { /* another patent data */ } }]\n\nconst patentRecords = $input.all().map(item => item.json);\nconsole.log('Input Patent Records:', patentRecords);\n\n// Hardcoded tech sector mapping from your DDL for quick ID lookup\nconst techSectorNameToIdMap = new Map([\n    [\"Foodtech\", 1],\n    [\"Biotech\", 2],\n    [\"Pharmaceutical\", 3],\n    [\"Other\", 4],\n    [\"Information and Communications Technology\", 5],\n    [\"Electrical & Manufacturing\", 6],\n    [\"Healthcare\", 7],\n    [\"Construction\", 8],\n    [\"Material Science\", 9],\n    [\"Textile\", 10]\n]);\n\n/**\n * Helper function to parse a tech sector string (e.g., \"Healthcare/Textile\")\n * into an array of unique names and their corresponding IDs.\n * @param {string} techSectorString - The combined tech sector string from a patent record.\n * @returns {object} An object containing 'ids' (array of unique tech sector IDs) and 'names' (string of unique sorted tech sector names).\n */\nfunction getTechSectorData(techSectorString) {\n    const names = techSectorString.split('/').map(s => s.trim()).filter(Boolean);\n    const ids = new Set();\n    const uniqueNames = new Set();\n\n    for (const name of names) {\n        if (techSectorNameToIdMap.has(name)) {\n            ids.add(techSectorNameToIdMap.get(name));\n            uniqueNames.add(name);\n        }\n    }\n    return {\n        ids: Array.from(ids).sort((a, b) => a - b), // Sort IDs numerically\n        // Rejoin with '/' to maintain consistency with the original format\n        // or use ', ' if comma-separated is preferred for consolidated output.\n        // For consistency in the consolidated record's 'techSector' field, let's keep '/'\n        // and sort names alphabetically.\n        names: Array.from(uniqueNames).sort().join('/')\n    };\n}\n\nconst uniquePatentsMap = new Map();\n\nfor (const record of patentRecords) {\n    const link = record.googlePatentLink;\n\n    // Process current record's tech sectors\n    const currentTechSectorData = getTechSectorData(record.techSector);\n\n    if (uniquePatentsMap.has(link)) {\n        // Duplicate found: Merge countryRegion AND techSector(s)\n        const existingRecord = uniquePatentsMap.get(link);\n\n        // Merge countries\n        const existingCountries = existingRecord.countryRegion\n            .split(',')\n            .map(c => c.trim())\n            .filter(Boolean);\n        const newCountries = record.countryRegion\n            .split(',')\n            .map(c => c.trim())\n            .filter(Boolean);\n        const allCountries = new Set([...existingCountries, ...newCountries]);\n        existingRecord.countryRegion = Array.from(allCountries).sort().join(', ');\n\n        // Merge tech sectors (names and IDs)\n        const existingTechSectorNames = existingRecord.techSector\n            .split('/') // Assuming original tech_sector comes as \"Name1/Name2\"\n            .map(s => s.trim())\n            .filter(Boolean);\n        const allTechSectorNames = new Set([...existingTechSectorNames, ...currentTechSectorData.names.split('/')]); // Add names from current record\n        existingRecord.techSector = Array.from(allTechSectorNames).sort().join('/'); // Update techSector string in the record\n\n        const existingTechSectorIds = existingRecord.techSectorIds || []; // Handle initial case where it might not exist\n        const allTechSectorIds = new Set([...existingTechSectorIds, ...currentTechSectorData.ids]);\n        existingRecord.techSectorIds = Array.from(allTechSectorIds).sort((a, b) => a - b); // Update techSectorIds array\n\n        uniquePatentsMap.set(link, existingRecord);\n        console.log(`Merged duplicate link: ${link}. New countryRegion: ${existingRecord.countryRegion}, New techSector: ${existingRecord.techSector}, New techSectorIds: ${existingRecord.techSectorIds}`);\n\n    } else {\n        // Not a duplicate: Add to map with initial techSectorIds\n        uniquePatentsMap.set(link, {\n            ...record,\n            techSector: currentTechSectorData.names, // Ensure techSector is consistent (sorted, / separated)\n            techSectorIds: currentTechSectorData.ids // Add the new techSectorIds array\n        });\n        console.log(`Added unique record for link: ${link} with techSectorIds: ${currentTechSectorData.ids}`);\n    }\n}\n\n// Convert the Map values back to an array of objects for output\nconst outputRecords = Array.from(uniquePatentsMap.values()).map(record => ({ json: record }));\n\nconsole.log('\\n--- Unique and Consolidated Patent Records ---');\nconsole.log(JSON.stringify(outputRecords, null, 2));\n\nreturn outputRecords;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        640
+      ],
+      "id": "0814452e-7316-4d51-84d5-4db5d929ab85",
+      "name": "Code to check duplicate"
+    },
+    {
+      "parameters": {
+        "content": "## Read from PDF file\nThis flow will be the ultimate flow to have the PolyU PDF read and processed to the related table of the DB. :)\n### Trigger\n(Tentatively file upload trigger - comm with PolyU for upload location)\n### Steps\n1. Read the PDF records, check for duplicate\n2. For each record, check for existing data\n## Data Entry\n3. For each new record, execute the data entry flow\nAreas need SQL to insert/update: \ni. patents main table << main flow\nii. assignees <-- google patent link flow\niii. department << create dictionary\niv. tech sector << main flow\nv. ai summary + ai short summary <-- google patent link flow\nvi. image links <-- google patent link flow\n \n4. For each old record, (should rectify data if something wrong...)",
+        "height": 480,
+        "width": 620,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "db044b77-2a07-49a0-9b66-513bf7a5540d",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.patents_list\nSET is_cn_applied = true\nWHERE sys_id = {{ $('Cache Info5').item.json.sys_id }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1140,
+        2040
+      ],
+      "id": "45a6f1ad-cee4-4a27-b065-0d744b3fe7cb",
+      "name": "Update is_cn_applied",
+      "credentials": {
+        "postgres": {
+          "id": "kofKkYvT61G5MAFp",
+          "name": "Postgres account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.patents_list (\n    official_title,\n    tech_sector,\n    inventor,\n    department,\n    country_region,\n    google_patent_link\n) VALUES (\n    '{{ $json.official_title }}',\n    '{{ $json.tech_sector }}',\n    '{{ $json.inventor }}',\n    '{{ $json.department }}',\n    '{{ $json.country_region }}',\n    '{{ $json.google_patent_link }}'\n)\n-- ON CONFLICT (google_patent_link) DO NOTHING\n  ON CONFLICT (google_patent_link) DO UPDATE SET\n    official_title = EXCLUDED.official_title,\n    tech_sector = EXCLUDED.tech_sector,\n    inventor = EXCLUDED.inventor,\n    department = EXCLUDED.department,\n    country_region = EXCLUDED.country_region,\n    created_dt = patents_list.created_dt -- Keep the original created_dt if updating\nRETURNING sys_id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2120,
+        760
+      ],
+      "id": "b58ac0ee-8108-4d22-93d2-6a79cec26a99",
+      "name": "Postgres7",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "kofKkYvT61G5MAFp",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.patent_tech_sectors (\n    patent_sys_id,\n    tech_sector_id\n)\nSELECT\n    {{ $json.sys_id }} AS patent_sys_id,\n    unnest(ARRAY{{ $('Cache Info6').item.json.techSectorIds }}::INTEGER[]) AS tech_sector_id\nON CONFLICT (patent_sys_id, tech_sector_id) DO NOTHING;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2340,
+        760
+      ],
+      "id": "e908f10c-61ae-4f44-a537-a60b8db213df",
+      "name": "Postgres8",
+      "credentials": {
+        "postgres": {
+          "id": "kofKkYvT61G5MAFp",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "googlePatentLink",
+              "renameField": true,
+              "outputFieldName": "all_google_patent_links"
+            }
+          ]
+        },
+        "options": {
+          "mergeLists": true
+        }
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        1000
+      ],
+      "id": "1f016ab2-dc85-4e0c-b24e-aa7b5b8d7021",
+      "name": "Aggregate1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT sys_id, official_title, tech_sector, inventor, google_patent_link, country_region , is_tech\nFROM public.patents_list\nWHERE is_tech = false AND google_patent_link NOT IN (\n'https://patents.google.com/patent/CN109984915B','https://patents.google.com/patent/US6860095B2','https://patents.google.com/patent/HK1082479A1','https://patents.google.com/patent/US7593531B2','https://patents.google.com/patent/US8359123B2','https://patents.google.com/patent/CN101388480B','https://patents.google.com/patent/US8265347B2','https://patents.google.com/patent/US8544580B2','https://patents.google.com/patent/EP2436358B1','https://patents.google.com/patent/CN101576888B','https://patents.google.com/patent/US8376968B2','https://patents.google.com/patent/CN102735734B','https://patents.google.com/patent/CN106858863B','https://patents.google.com/patent/US6976025B2','https://patents.google.com/patent/US7506983B2','https://patents.google.com/patent/USRE47006E1','https://patents.google.com/patent/US7096655B2','https://patents.google.com/patent/US7687264B2','https://patents.google.com/patent/US7912108B2','https://patents.google.com/patent/CN100432009C','https://patents.google.com/patent/CN100573601C','https://patents.google.com/patent/US7751985B2','https://patents.google.com/patent/CN102329723B','https://patents.google.com/patent/US8405491B2','https://patents.google.com/patent/US8620900B2','https://patents.google.com/patent/CN101675903B','https://patents.google.com/patent/CN101873673B','https://patents.google.com/patent/US8374414B2','https://patents.google.com/patent/US8709732B2','https://patents.google.com/patent/CN216106045U','https://patents.google.com/patent/CN217207201U','https://patents.google.com/patent/US7446643B2','https://patents.google.com/patent/US7255847B2','https://patents.google.com/patent/US7819013B2','https://patents.google.com/patent/US9279215B2','https://patents.google.com/patent/US7411866B1','https://patents.google.com/patent/US7781987B2','https://patents.google.com/patent/CN102889664B','https://patents.google.com/patent/CN102497821B','https://patents.google.com/patent/US8855759B2','https://patents.google.com/patent/EP1608757B1','https://patents.google.com/patent/EP2351680B1','https://patents.google.com/patent/US7637470B2','https://patents.google.com/patent/US9311767B2','https://patents.google.com/patent/CN102089618B','https://patents.google.com/patent/US8349299B2','https://patents.google.com/patent/US7835605B1','https://patents.google.com/patent/EP2459073B1','https://patents.google.com/patent/EP2748176B1','https://patents.google.com/patent/HK1205629A2','https://patents.google.com/patent/US10639744B2','https://patents.google.com/patent/CN109060876B','https://patents.google.com/patent/US11309535B2','https://patents.google.com/patent/CN109009604B','https://patents.google.com/patent/EP1778663B1','https://patents.google.com/patent/CN105286101B','https://patents.google.com/patent/CN106554393B','https://patents.google.com/patent/CN101505192B','https://patents.google.com/patent/CN109206612B','https://patents.google.com/patent/CN207747951U','https://patents.google.com/patent/US7922929B2','https://patents.google.com/patent/CN106919732B','https://patents.google.com/patent/US10418825B2','https://patents.google.com/patent/US10913863B2','https://patents.google.com/patent/CN107964257B','https://patents.google.com/patent/CN109868590B','https://patents.google.com/patent/CN100453473C','https://patents.google.com/patent/CN101467798B','https://patents.google.com/patent/CN100353141C','https://patents.google.com/patent/HK1084952A1','https://patents.google.com/patent/US7976944B2','https://patents.google.com/patent/CN108801946B','https://patents.google.com/patent/CN112923922B','https://patents.google.com/patent/CN113419364B','https://patents.google.com/patent/CN104666048B','https://patents.google.com/patent/CN105676245B','https://patents.google.com/patent/CN101634759B','https://patents.google.com/patent/CN108288881B','https://patents.google.com/patent/CN102189505B','https://patents.google.com/patent/EP2744125B1','https://patents.google.com/patent/US10976434B2','https://patents.google.com/patent/CN101622628B','https://patents.google.com/patent/US11155326B2','https://patents.google.com/patent/US7942018B2','https://patents.google.com/patent/CN213796481U','https://patents.google.com/patent/CN102479347B','https://patents.google.com/patent/US9486440B2','https://patents.google.com/patent/CN104596996B','https://patents.google.com/patent/US7977074B2','https://patents.google.com/patent/US10624579B2','https://patents.google.com/patent/CN112814268B','https://patents.google.com/patent/CN113192315B','https://patents.google.com/patent/CN103088465B','https://patents.google.com/patent/CN110426717B','https://patents.google.com/patent/CN101539267B','https://patents.google.com/patent/EP2506456B1','https://patents.google.com/patent/HK1205628A2','https://patents.google.com/patent/CN106588983B','https://patents.google.com/patent/CN110870769B','https://patents.google.com/patent/CN110272605B','https://patents.google.com/patent/CN109657907B','https://patents.google.com/patent/CN100374629C','https://patents.google.com/patent/CN101207961B','https://patents.google.com/patent/CN110893192B','https://patents.google.com/patent/IN19','https://patents.google.com/patent/CN111434339B','https://patents.google.com/patent/US7199495B2','https://patents.google.com/patent/CN113595626B','https://patents.google.com/patent/DE602005025663D1','https://patents.google.com/patent/US7729567B2','https://patents.google.com/patent/CN109427956B','https://patents.google.com/patent/CN110274705B','https://patents.google.com/patent/US7266260B2','https://patents.google.com/patent/CN101061984B','https://patents.google.com/patent/US8150891B2','https://patents.google.com/patent/USRE45147E1','https://patents.google.com/patent/US7664351B2','https://patents.google.com/patent/CN101324674B','https://patents.google.com/patent/US7458943B1','https://patents.google.com/patent/US7765880B2','https://patents.google.com/patent/US9382525B2','https://patents.google.com/patent/CN102280258B','https://patents.google.com/patent/CN102261164B','https://patents.google.com/patent/CN102749415B','https://patents.google.com/patent/US8345971B2','https://patents.google.com/patent/CN102363624B','https://patents.google.com/patent/CN102953137B','https://patents.google.com/patent/US10231897B2','https://patents.google.com/patent/HK1204472A1','https://patents.google.com/patent/CN103361786B','https://patents.google.com/patent/US7216068B2','https://patents.google.com/patent/US7206259B2','https://patents.google.com/patent/CN100560031C','https://patents.google.com/patent/US7470940B2','https://patents.google.com/patent/US7494476B2','https://patents.google.com/patent/US7496453B2','https://patents.google.com/patent/US7507891B2','https://patents.google.com/patent/US8679588B2','https://patents.google.com/patent/US8277678B2','https://patents.google.com/patent/CN109554797B','https://patents.google.com/patent/US7550281B2','https://patents.google.com/patent/CN100503501C','https://patents.google.com/patent/EP2261001B1','https://patents.google.com/patent/CN101339001B','https://patents.google.com/patent/CN101868447B','https://patents.google.com/patent/US9603197B2','https://patents.google.com/patent/US7796844B2','https://patents.google.com/patent/US9226993B2','https://patents.google.com/patent/US8669354B2','https://patents.google.com/patent/EP2616876B1','https://patents.google.com/patent/US8872909B2','https://patents.google.com/patent/US8549830B1','https://patents.google.com/patent/CN178449','https://patents.google.com/patent/EP1799166B1','https://patents.google.com/patent/CN100520406C','https://patents.google.com/patent/CN100523038C','https://patents.google.com/patent/CN101002696B','https://patents.google.com/patent/US8160996B2','https://patents.google.com/patent/US8016768B2','https://patents.google.com/patent/US7796854B2','https://patents.google.com/patent/US9074267B2','https://patents.google.com/patent/CN104094164B','https://patents.google.com/patent/CN101090686B','https://patents.google.com/patent/CN100535575C','https://patents.google.com/patent/US10111854B2','https://patents.google.com/patent/CN105442359B','https://patents.google.com/patent/US11302421B2','https://patents.google.com/patent/US11315023B2','https://patents.google.com/patent/CN110554495B','https://patents.google.com/patent/CN305012864S','https://patents.google.com/patent/1802390','https://patents.google.com/patent/CN109206620B','https://patents.google.com/patent/US8193377B2','https://patents.google.com/patent/US7544816B2','https://patents.google.com/patent/US11045445B2','https://patents.google.com/patent/CN107795631B','https://patents.google.com/patent/CN103982813B','https://patents.google.com/patent/US10851479B2','https://patents.google.com/patent/CN101738382B','https://patents.google.com/patent/CN110898257B','https://patents.google.com/patent/CN112541621B','https://patents.google.com/patent/CN112016400B','https://patents.google.com/patent/CN112308889B','https://patents.google.com/patent/CN100394972C','https://patents.google.com/patent/US10316246B2','https://patents.google.com/patent/US9017266B2','https://patents.google.com/patent/CN108284398B','https://patents.google.com/patent/CN105632003B','https://patents.google.com/patent/CN106712332B','https://patents.google.com/patent/US9037270B2','https://patents.google.com/patent/CN112479615B','https://patents.google.com/patent/CN112330604B','https://patents.google.com/patent/CN100405078C','https://patents.google.com/patent/CN106928158B','https://patents.google.com/patent/CN105576719B','https://patents.google.com/patent/CN109641995B','https://patents.google.com/patent/US10012553B2','https://patents.google.com/patent/CN109171815B','https://patents.google.com/patent/US8999506B2','https://patents.google.com/patent/US8953854B2','https://patents.google.com/patent/US9694350B2','https://patents.google.com/patent/CN111469389B','https://patents.google.com/patent/CN103070744B','https://patents.google.com/patent/CN103710997B','https://patents.google.com/patent/CN101493244B','https://patents.google.com/patent/ES2401127T3','https://patents.google.com/patent/CN106994626B','https://patents.google.com/patent/US9754731B2','https://patents.google.com/patent/CN112059924B','https://patents.google.com/patent/US11397335B2','https://patents.google.com/patent/US10646467B2','https://patents.google.com/patent/CN203674161U','https://patents.google.com/patent/US10434505B1','https://patents.google.com/patent/CN103994851B','https://patents.google.com/patent/CN102696176B','https://patents.google.com/patent/CN102478584B','https://patents.google.com/patent/CN109384372B','https://patents.google.com/patent/US8900146B2','https://patents.google.com/patent/CN101117304B','https://patents.google.com/patent/CN206144016U','https://patents.google.com/patent/CN205978257U','https://patents.google.com/patent/CN107868095B','https://patents.google.com/patent/CN215629053U','https://patents.google.com/patent/CN197158','https://patents.google.com/patent/CN100349548C','https://patents.google.com/patent/EP2411040B1','https://patents.google.com/patent/CN109759711B','https://patents.google.com/patent/JP4891249B2','https://patents.google.com/patent/CN114117514B','https://patents.google.com/patent/JP5265915B2','https://patents.google.com/patent/CN113345025B','https://patents.google.com/patent/US7109297B2','https://patents.google.com/patent/US7466846B2','https://patents.google.com/patent/US7496214B2','https://patents.google.com/patent/CN101569543B','https://patents.google.com/patent/CN184680','https://patents.google.com/patent/US8574178B2','https://patents.google.com/patent/CN102498586B','https://patents.google.com/patent/US8531919B2','https://patents.google.com/patent/AU2010278526B2','https://patents.google.com/patent/US8160412B2','https://patents.google.com/patent/CN102928302B','https://patents.google.com/patent/US10071907B2','https://patents.google.com/patent/CN102956245B','https://patents.google.com/patent/US8885473B2','https://patents.google.com/patent/US10208025B2','https://patents.google.com/patent/US9138705B2','https://patents.google.com/patent/CN122695','https://patents.google.com/patent/US7298060B2','https://patents.google.com/patent/US7219556B2','https://patents.google.com/patent/US7124636B2','https://patents.google.com/patent/US7544627B2','https://patents.google.com/patent/CN100434036C','https://patents.google.com/patent/CN102968603B','https://patents.google.com/patent/US8478092B2','https://patents.google.com/patent/CN102379792B','https://patents.google.com/patent/CN109478777B','https://patents.google.com/patent/CN105748037B','https://patents.google.com/patent/CN202258325U','https://patents.google.com/patent/US6987676B2','https://patents.google.com/patent/CN108501361B','https://patents.google.com/patent/CN101551501B','https://patents.google.com/patent/US8135181B2','https://patents.google.com/patent/US7500399B2','https://patents.google.com/patent/CN101324437B','https://patents.google.com/patent/CN102316840B','https://patents.google.com/patent/US8536665B2','https://patents.google.com/patent/US8212056B2','https://patents.google.com/patent/EP2307853B1','https://patents.google.com/patent/CN102035556B','https://patents.google.com/patent/CN102398193B','https://patents.google.com/patent/CN102948927B','https://patents.google.com/patent/US7425412B2','https://patents.google.com/patent/US7730775B2','https://patents.google.com/patent/US8775410B2','https://patents.google.com/patent/US8196012B2','https://patents.google.com/patent/CN111484235B','https://patents.google.com/patent/CN215942333U','https://patents.google.com/patent/US10550266B2','https://patents.google.com/patent/CN103004110B','https://patents.google.com/patent/EP3274298B1','https://patents.google.com/patent/CN107326700B','https://patents.google.com/patent/CN106264988B','https://patents.google.com/patent/US10426637B2','https://patents.google.com/patent/CN110387620B','https://patents.google.com/patent/CN104678572B','https://patents.google.com/patent/US7094725B2','https://patents.google.com/patent/CN211600920U','https://patents.google.com/patent/US11217751B2','https://patents.google.com/patent/CN100540009C','https://patents.google.com/patent/CN102499917B','https://patents.google.com/patent/CN107843218B','https://patents.google.com/patent/CN102594278B','https://patents.google.com/patent/CN104758315B','https://patents.google.com/patent/CA275644','https://patents.google.com/patent/CN108295030B','https://patents.google.com/patent/CN112488384B','https://patents.google.com/patent/CN205978232U','https://patents.google.com/patent/CN109422765B','https://patents.google.com/patent/CN216432132U','https://patents.google.com/patent/CN105652292B','https://patents.google.com/patent/CN103182762B','https://patents.google.com/patent/CN101072764B','https://patents.google.com/patent/CN102192501B','https://patents.google.com/patent/CN105486744B','https://patents.google.com/patent/CN108317206B','https://patents.google.com/patent/CN101757778B','https://patents.google.com/patent/CN107445989B','https://patents.google.com/patent/CN109535075B','https://patents.google.com/patent/CN110232302B','https://patents.google.com/patent/US11224860B2','https://patents.google.com/patent/CN103705589B','https://patents.google.com/patent/HK1222963A1','https://patents.google.com/patent/CN112019276B','https://patents.google.com/patent/CN102280271B','https://patents.google.com/patent/CN103556308B','https://patents.google.com/patent/CN105983169B','https://patents.google.com/patent/CN103565470B','https://patents.google.com/patent/CN102061625B','https://patents.google.com/patent/US10916771B2','https://patents.google.com/patent/CN106842907B','https://patents.google.com/patent/CN208024750U','https://patents.google.com/patent/CN113174787B','https://patents.google.com/patent/CN101169401B','https://patents.google.com/patent/CN207866722U','https://patents.google.com/patent/CN100520345C','https://patents.google.com/patent/CN111997823B','https://patents.google.com/patent/JP323923','https://patents.google.com/patent/CN112878054B','https://patents.google.com/patent/MX284423','https://patents.google.com/patent/CN109583513B','https://patents.google.com/patent/CN112946922B','https://patents.google.com/patent/20200181864','https://patents.google.com/patent/JP5746137B2','https://patents.google.com/patent/HK30068720','https://patents.google.com/patent/US8486847B2','https://patents.google.com/patent/CN101454305B','https://patents.google.com/patent/US8195192B2','https://patents.google.com/patent/US7323110B1','https://patents.google.com/patent/CN101569540B','https://patents.google.com/patent/CN101998381B','https://patents.google.com/patent/CN107428557B','https://patents.google.com/patent/CN209749839U','https://patents.google.com/patent/US7714117B2','https://patents.google.com/patent/CN194353','https://patents.google.com/patent/CN100364199C','https://patents.google.com/patent/US7505642B2','https://patents.google.com/patent/CN101153081B','https://patents.google.com/patent/US7688748B2','https://patents.google.com/patent/US7667576B2','https://patents.google.com/patent/CN101628706B','https://patents.google.com/patent/US8273036B2','https://patents.google.com/patent/US8229178B2','https://patents.google.com/patent/CN100348573C16','https://patents.google.com/patent/US7557205B2','https://patents.google.com/patent/CN100367290C','https://patents.google.com/patent/CN100522364C','https://patents.google.com/patent/HK1103584A1','https://patents.google.com/patent/US8318498B2','https://patents.google.com/patent/US8282276B2','https://patents.google.com/patent/US8752752B2','https://patents.google.com/patent/CN102387242B','https://patents.google.com/patent/CN102865641B','https://patents.google.com/patent/US8548282B2','https://patents.google.com/patent/US9399631B2','https://patents.google.com/patent/CN100591383C','https://patents.google.com/patent/CN101152646B','https://patents.google.com/patent/US8544252B2','https://patents.google.com/patent/US8242073B2','https://patents.google.com/patent/US8411913B2','https://patents.google.com/patent/US8147410B2','https://patents.google.com/patent/US8507245B2','https://patents.google.com/patent/EP2762069B1','https://patents.google.com/patent/US8987706B2','https://patents.google.com/patent/CN203786745U','https://patents.google.com/patent/US11014948B2','https://patents.google.com/patent/US10859552B2','https://patents.google.com/patent/CN103983435B','https://patents.google.com/patent/CN104327106B','https://patents.google.com/patent/US8923702B2','https://patents.google.com/patent/HK1247907A1','https://patents.google.com/patent/US10753908B2','https://patents.google.com/patent/HK1250598A2','https://patents.google.com/patent/CN109247581B','https://patents.google.com/patent/CN109962634B','https://patents.google.com/patent/CN108872033B','https://patents.google.com/patent/CN113822513B','https://patents.google.com/patent/CN112489176B','https://patents.google.com/patent/CN214591765U','https://patents.google.com/patent/CN107287879B','https://patents.google.com/patent/US9951039B2','https://patents.google.com/patent/CN106156501B','https://patents.google.com/patent/CN109750394B','https://patents.google.com/patent/CN100518834C','https://patents.google.com/patent/CN102118850B','https://patents.google.com/patent/CN108629760B','https://patents.google.com/patent/HK30025212','https://patents.google.com/patent/CN101753006B','https://patents.google.com/patent/CN101205697B','https://patents.google.com/patent/CN102462510B','https://patents.google.com/patent/US9398972B2','https://patents.google.com/patent/CN102479339B','https://patents.google.com/patent/US9072669B2','https://patents.google.com/patent/CN107488897B','https://patents.google.com/patent/CN107720560B','https://patents.google.com/patent/CN106033025B','https://patents.google.com/patent/CN109389571B','https://patents.google.com/patent/CN112177043B','https://patents.google.com/patent/CN112049664B','https://patents.google.com/patent/CN113524175B','https://patents.google.com/patent/CN207875945U','https://patents.google.com/patent/CN105676239B','https://patents.google.com/patent/CN102708373B','https://patents.google.com/patent/US10692280B2','https://patents.google.com/patent/CN109247580B','https://patents.google.com/patent/CN110298687B','https://patents.google.com/patent/CN110193386B','https://patents.google.com/patent/CN102558292B','https://patents.google.com/patent/CN104070292B','https://patents.google.com/patent/CN107012349B','https://patents.google.com/patent/CN103982855B','https://patents.google.com/patent/CN111746764B','https://patents.google.com/patent/CN112195547B','https://patents.google.com/patent/CN108015761B','https://patents.google.com/patent/US9527947B2','https://patents.google.com/patent/CN105989095B','https://patents.google.com/patent/US10093787B2','https://patents.google.com/patent/CN110997066B','https://patents.google.com/patent/CN112352225B','https://patents.google.com/patent/CN102071830B','https://patents.google.com/patent/CN104878078B','https://patents.google.com/patent/CN100428942C','https://patents.google.com/patent/CN102479266B','https://patents.google.com/patent/CN105683212A','https://patents.google.com/patent/CN104282524B','https://patents.google.com/patent/US10675743B2','https://patents.google.com/patent/CN111623192B','https://patents.google.com/patent/CN103066588B','https://patents.google.com/patent/CN110605403B','https://patents.google.com/patent/CN111210501B','https://patents.google.com/patent/CN113401500B','https://patents.google.com/patent/CN111289159B','https://patents.google.com/patent/JP4246154B2','https://patents.google.com/patent/JP5232233B2','https://patents.google.com/patent/KR101259669B1','https://patents.google.com/patent/CN101827410B','https://patents.google.com/patent/CN100362963C','https://patents.google.com/patent/US8226962B2','https://patents.google.com/patent/US7775333B2','https://patents.google.com/patent/US7260126B2','https://patents.google.com/patent/US8563607B2','https://patents.google.com/patent/US7881771B2','https://patents.google.com/patent/CN101650417B','https://patents.google.com/patent/US7879404B2','https://patents.google.com/patent/US8208692B2','https://patents.google.com/patent/US11028504B2','https://patents.google.com/patent/US7854173B2','https://patents.google.com/patent/US8531952B2','https://patents.google.com/patent/CN102373564B','https://patents.google.com/patent/US9632058B2','https://patents.google.com/patent/CN102034264B','https://patents.google.com/patent/CN102793568B','https://patents.google.com/patent/CN102887479B','https://patents.google.com/patent/CN103027789B','https://patents.google.com/patent/CN100402738C','https://patents.google.com/patent/US7323303B2','https://patents.google.com/patent/US8349343B2','https://patents.google.com/patent/US7466896B2','https://patents.google.com/patent/US7803273B2','https://patents.google.com/patent/US8325012B2','https://patents.google.com/patent/US8409367B2','https://patents.google.com/patent/CN100380391C','https://patents.google.com/patent/CN100394874C','https://patents.google.com/patent/CN110206178B','https://patents.google.com/patent/US8058310B2','https://patents.google.com/patent/CN101116755B','https://patents.google.com/patent/HK1136321A1','https://patents.google.com/patent/US9222203B2','https://patents.google.com/patent/CN103097940B','https://patents.google.com/patent/US9241513B2','https://patents.google.com/patent/CN102995395B','https://patents.google.com/patent/1702429','https://patents.google.com/patent/US9089288B2','https://patents.google.com/patent/US10395851B2','https://patents.google.com/patent/US7619749B2','https://patents.google.com/patent/US7722283B2','https://patents.google.com/patent/CN101598529B','https://patents.google.com/patent/US8006442B2','https://patents.google.com/patent/US10132463B2','https://patents.google.com/patent/CN101645142B','https://patents.google.com/patent/CN101843501B','https://patents.google.com/patent/US8833418B2','https://patents.google.com/patent/CN103475611B','https://patents.google.com/patent/US11211606B2','https://patents.google.com/patent/CN112819753B','https://patents.google.com/patent/US10266403B2','https://patents.google.com/patent/US11029540B2','https://patents.google.com/patent/US10957045B2','https://patents.google.com/patent/CN103004039B','https://patents.google.com/patent/CN106137489B','https://patents.google.com/patent/CN102844661B','https://patents.google.com/patent/US10043493B2','https://patents.google.com/patent/AU2010242422B2','https://patents.google.com/patent/CN109410183B','https://patents.google.com/patent/US8004119B2','https://patents.google.com/patent/CN210598348U','https://patents.google.com/patent/CN212289523U','https://patents.google.com/patent/CN112142742B','https://patents.google.com/patent/CN112308778B','https://patents.google.com/patent/CN100395767C','https://patents.google.com/patent/CN198575','https://patents.google.com/patent/CN110093702B','https://patents.google.com/patent/CN100458824C','https://patents.google.com/patent/US9049503B2','https://patents.google.com/patent/HK40001070','https://patents.google.com/patent/US9846118B2','https://patents.google.com/patent/CN113402588B','https://patents.google.com/patent/CN209798652U','https://patents.google.com/patent/US9483681B2','https://patents.google.com/patent/US9734165B2','https://patents.google.com/patent/CN204666087U','https://patents.google.com/patent/HK30027766','https://patents.google.com/patent/CN110378224B','https://patents.google.com/patent/HK30025211','https://patents.google.com/patent/CN180417','https://patents.google.com/patent/CN110197749B','https://patents.google.com/patent/CN102651563B','https://patents.google.com/patent/CN103889999B','https://patents.google.com/patent/CN109381218B','https://patents.google.com/patent/CN109719306B','https://patents.google.com/patent/CN213796482U','https://patents.google.com/patent/CN103424441B','https://patents.google.com/patent/US8980648B1','https://patents.google.com/patent/CN104007508B','https://patents.google.com/patent/CN107610155B','https://patents.google.com/patent/CN111209533B','https://patents.google.com/patent/CN113539509B','https://patents.google.com/patent/CN101521459B','https://patents.google.com/patent/CN100428952C','https://patents.google.com/patent/US10622618B2','https://patents.google.com/patent/CN109264978B','https://patents.google.com/patent/CN111865020B','https://patents.google.com/patent/CN111205428B','https://patents.google.com/patent/CN100547863C','https://patents.google.com/patent/CN100587144C','https://patents.google.com/patent/CN103730559B','https://patents.google.com/patent/CN112004591B','https://patents.google.com/patent/CN113296167B','https://patents.google.com/patent/CN111442989B','https://patents.google.com/patent/CN100563094C','https://patents.google.com/patent/US7096166B2','https://patents.google.com/patent/US8538999B2','https://patents.google.com/patent/US7358383B2','https://patents.google.com/patent/CN101569541B','https://patents.google.com/patent/US8197425B2','https://patents.google.com/patent/US8980848B2','https://patents.google.com/patent/US9829722B2','https://patents.google.com/patent/CN202305068U','https://patents.google.com/patent/US8671323B2','https://patents.google.com/patent/CN105088826B','https://patents.google.com/patent/CN104169267B','https://patents.google.com/patent/US11357873B2','https://patents.google.com/patent/US7162305B2','https://patents.google.com/patent/CN131246','https://patents.google.com/patent/US7591707B2','https://patents.google.com/patent/US8191433B2','https://patents.google.com/patent/US9321730B2','https://patents.google.com/patent/CN101487690B','https://patents.google.com/patent/US8214976B2','https://patents.google.com/patent/CN107020427B','https://patents.google.com/patent/CN100577965C','https://patents.google.com/patent/CN108508596B','https://patents.google.com/patent/US7854708B2','https://patents.google.com/patent/US8152136B2','https://patents.google.com/patent/US8632243B2','https://patents.google.com/patent/US8404347B2','https://patents.google.com/patent/CN102908664B','https://patents.google.com/patent/US8329425B2','https://patents.google.com/patent/HK1104485A1','https://patents.google.com/patent/CA256187','https://patents.google.com/patent/HK1210838A1','https://patents.google.com/patent/HK122662','https://patents.google.com/patent/CN100474950C','https://patents.google.com/patent/CN100376325C','https://patents.google.com/patent/CN100522362C','https://patents.google.com/patent/CN100439943C','https://patents.google.com/patent/CN101049247B','https://patents.google.com/patent/US8993065B2','https://patents.google.com/patent/US7361908B2','https://patents.google.com/patent/US7841161B2','https://patents.google.com/patent/US8386065B2','https://patents.google.com/patent/US8011803B2','https://patents.google.com/patent/CN101961527B','https://patents.google.com/patent/CN101897643B','https://patents.google.com/patent/DE202022104138','https://patents.google.com/patent/US10188629B2','https://patents.google.com/patent/US9825650B2','https://patents.google.com/patent/CN106581006B','https://patents.google.com/patent/HK123886','https://patents.google.com/patent/CN110340807A','https://patents.google.com/patent/CN108292967B','https://patents.google.com/patent/CN110022240B','https://patents.google.com/patent/CN107688250B','https://patents.google.com/patent/CN110288602B','https://patents.google.com/patent/CN104279424B','https://patents.google.com/patent/CN102439876B','https://patents.google.com/patent/US9655174B2','https://patents.google.com/patent/US10385435B2','https://patents.google.com/patent/US7993823B2','https://patents.google.com/patent/CN110026329B','https://patents.google.com/patent/CN114007454B','https://patents.google.com/patent/CN109745330B','https://patents.google.com/patent/CN113008845B','https://patents.google.com/patent/CN105635956B','https://patents.google.com/patent/HK1206915A2','https://patents.google.com/patent/US10832472B2','https://patents.google.com/patent/CN108873302B','https://patents.google.com/patent/CN106255224B','https://patents.google.com/patent/CN109183460B','https://patents.google.com/patent/CN209522985U','https://patents.google.com/patent/CN107581708B','https://patents.google.com/patent/AU2006214213B2','https://patents.google.com/patent/CN109078228B','https://patents.google.com/patent/CN113834230B','https://patents.google.com/patent/CN107528077B','https://patents.google.com/patent/CN109693148B','https://patents.google.com/patent/CN208289640U','https://patents.google.com/patent/CN104091558B','https://patents.google.com/patent/MY176821','https://patents.google.com/patent/CN104674539B','https://patents.google.com/patent/CN102913366B','https://patents.google.com/patent/CN103837130B','https://patents.google.com/patent/CN110294720B','https://patents.google.com/patent/US9169230B2','https://patents.google.com/patent/CN100494966C','https://patents.google.com/patent/CN110094452B','https://patents.google.com/patent/CN102651594B','https://patents.google.com/patent/CN104793227B','https://patents.google.com/patent/CN101794374B','https://patents.google.com/patent/US11148085B2','https://patents.google.com/patent/TWI55904','https://patents.google.com/patent/CN104346382B','https://patents.google.com/patent/CN109303544B','https://patents.google.com/patent/CN107612870B','https://patents.google.com/patent/CN108538050B','https://patents.google.com/patent/CN101225599B','https://patents.google.com/patent/US9455093B2','https://patents.google.com/patent/CN105266933B','https://patents.google.com/patent/CN128911','https://patents.google.com/patent/US9920084B2','https://patents.google.com/patent/US10268050B2','https://patents.google.com/patent/CN102740290B','https://patents.google.com/patent/CN106686878B','https://patents.google.com/patent/HK124120','https://patents.google.com/patent/CN124871','https://patents.google.com/patent/CN111748904B','https://patents.google.com/patent/CN216432131U','https://patents.google.com/patent/CN113410743B','https://patents.google.com/patent/CN100427005C','https://patents.google.com/patent/CN112774058B','https://patents.google.com/patent/AU2005289302B2','https://patents.google.com/patent/JP5771592B2','https://patents.google.com/patent/CN109100477B','https://patents.google.com/patent/CN113345017B','https://patents.google.com/patent/1799166','https://patents.google.com/patent/CN113568076B','https://patents.google.com/patent/MOJ003122','https://patents.google.com/patent/CN113865114B','https://patents.google.com/patent/US8861973B2','https://patents.google.com/patent/US7510745B2','https://patents.google.com/patent/US7531203B2','https://patents.google.com/patent/CN100554960C','https://patents.google.com/patent/US7407514B2','https://patents.google.com/patent/CN100395397C','https://patents.google.com/patent/US8710097B2','https://patents.google.com/patent/CN101338519B','https://patents.google.com/patent/US8956634B2','https://patents.google.com/patent/US8217618B2','https://patents.google.com/patent/20130014577','https://patents.google.com/patent/US9605304B2','https://patents.google.com/patent/WO2013143455A1','https://patents.google.com/patent/US10898407B2','https://patents.google.com/patent/US7675401B2','https://patents.google.com/patent/US8309167B2','https://patents.google.com/patent/US8540652B2','https://patents.google.com/patent/CN101521070B','https://patents.google.com/patent/US8080949B2','https://patents.google.com/patent/CN101569544B','https://patents.google.com/patent/US7797348B2','https://patents.google.com/patent/CN109910214B','https://patents.google.com/patent/CN102740263B','https://patents.google.com/patent/CN100497993C','https://patents.google.com/patent/US7800349B2','https://patents.google.com/patent/US8050894B2','https://patents.google.com/patent/CN101644815B','https://patents.google.com/patent/US8901292B2','https://patents.google.com/patent/US7331117B2','https://patents.google.com/patent/US7137458B2','https://patents.google.com/patent/US8106101B2','https://patents.google.com/patent/US7767711B2','https://patents.google.com/patent/US7494601B2','https://patents.google.com/patent/CN101286639B','https://patents.google.com/patent/US7543504B1','https://patents.google.com/patent/US8355543B2','https://patents.google.com/patent/US8344007B2','https://patents.google.com/patent/CN101996905B','https://patents.google.com/patent/CN102370996B','https://patents.google.com/patent/TWI46767','https://patents.google.com/patent/US9557099B2','https://patents.google.com/patent/US11307162B2','https://patents.google.com/patent/CN108956261B','https://patents.google.com/patent/CN109426622B','https://patents.google.com/patent/US8710248B2','https://patents.google.com/patent/US10093692B2','https://patents.google.com/patent/US9203517B2','https://patents.google.com/patent/CN104160626B','https://patents.google.com/patent/CN109147904B','https://patents.google.com/patent/CN212079307U','https://patents.google.com/patent/CN109668911B','https://patents.google.com/patent/CN104425213B','https://patents.google.com/patent/US9281119B2','https://patents.google.com/patent/CN204083050U','https://patents.google.com/patent/US20190292642A1','https://patents.google.com/patent/CN107292948B','https://patents.google.com/patent/US10693321B2','https://patents.google.com/patent/US10315191B2','https://patents.google.com/patent/CN108326844B','https://patents.google.com/patent/CN110660966B','https://patents.google.com/patent/CN106451979B','https://patents.google.com/patent/US9697308B2','https://patents.google.com/patent/CN105096670B','https://patents.google.com/patent/CN203910954U','https://patents.google.com/patent/CN103992631B','https://patents.google.com/patent/CN109412007B','https://patents.google.com/patent/CN112865869B','https://patents.google.com/patent/CN207301404U','https://patents.google.com/patent/CN104597096B','https://patents.google.com/patent/CN100572374C','https://patents.google.com/patent/CN102442698B','https://patents.google.com/patent/SG11201707704QA','https://patents.google.com/patent/CN101737774B','https://patents.google.com/patent/CN101595062B','https://patents.google.com/patent/CN205978258U','https://patents.google.com/patent/CN101809160B','https://patents.google.com/patent/CN103284753B','https://patents.google.com/patent/CN192691','https://patents.google.com/patent/CN104193672B','https://patents.google.com/patent/CN209059579U','https://patents.google.com/patent/CN208540745U','https://patents.google.com/patent/HK123562','https://patents.google.com/patent/CN103603089B','https://patents.google.com/patent/CN104652119B','https://patents.google.com/patent/CN304674679S','https://patents.google.com/patent/CN105596027B','https://patents.google.com/patent/CN103075423B','https://patents.google.com/patent/US9863824B1','https://patents.google.com/patent/US10642657B2','https://patents.google.com/patent/CN108214483B','https://patents.google.com/patent/CN210472899U','https://patents.google.com/patent/CN167272','https://patents.google.com/patent/US9079338B2','https://patents.google.com/patent/CN105375713B','https://patents.google.com/patent/US7998110B2','https://patents.google.com/patent/HK1201017A2','https://patents.google.com/patent/CN108222369B','https://patents.google.com/patent/US10610950B2','https://patents.google.com/patent/US10147941B2','https://patents.google.com/patent/CN100344824C','https://patents.google.com/patent/CN110173146B','https://patents.google.com/patent/HK30031213','https://patents.google.com/patent/CN207114289U','https://patents.google.com/patent/CN110619090B','https://patents.google.com/patent/CN113822518B','https://patents.google.com/patent/CN104565885B','https://patents.google.com/patent/CN114078140B','https://patents.google.com/patent/CN217982048U','https://patents.google.com/patent/CN112175204B','https://patents.google.com/patent/US7462960B2','https://patents.google.com/patent/CN100378488C','https://patents.google.com/patent/US8133423B2','https://patents.google.com/patent/CN102481345B','https://patents.google.com/patent/CN100382705C','https://patents.google.com/patent/US7673432B2','https://patents.google.com/patent/CN167638','https://patents.google.com/patent/US8055053B2','https://patents.google.com/patent/CN101856538B','https://patents.google.com/patent/US9918894B2','https://patents.google.com/patent/US9498011B2','https://patents.google.com/patent/CN106994642B','https://patents.google.com/patent/MY143853','https://patents.google.com/patent/US7585721B2','https://patents.google.com/patent/CN100433372C','https://patents.google.com/patent/US7410912B2','https://patents.google.com/patent/CN100416565C','https://patents.google.com/patent/KR101255350B1','https://patents.google.com/patent/US8263388B2','https://patents.google.com/patent/US8409117B2','https://patents.google.com/patent/US8093821B2','https://patents.google.com/patent/US8298131B2','https://patents.google.com/patent/CA276915','https://patents.google.com/patent/CN103961090B','https://patents.google.com/patent/CN109802013B','https://patents.google.com/patent/US7676159B2','https://patents.google.com/patent/CN101093232B','https://patents.google.com/patent/CN101820845B','https://patents.google.com/patent/US8950860B2','https://patents.google.com/patent/US9493419B2','https://patents.google.com/patent/USRE43851E1','https://patents.google.com/patent/CN193232','https://patents.google.com/patent/CN100355407C','https://patents.google.com/patent/CN100482345C','https://patents.google.com/patent/CN107228812B','https://patents.google.com/patent/CN102682801B','https://patents.google.com/patent/CN102192614B','https://patents.google.com/patent/CN100395448C','https://patents.google.com/patent/CN102293402B','https://patents.google.com/patent/US8174375B2','https://patents.google.com/patent/US8274368B2','https://patents.google.com/patent/US8129220B2','https://patents.google.com/patent/US9335468B2','https://patents.google.com/patent/CN102603692B','https://patents.google.com/patent/CN105277132B','https://patents.google.com/patent/CN215124889U','https://patents.google.com/patent/CN110022334B','https://patents.google.com/patent/CN110349092B','https://patents.google.com/patent/US9713603B2','https://patents.google.com/patent/TWI56188','https://patents.google.com/patent/US10390973B2','https://patents.google.com/patent/US9562037B2','https://patents.google.com/patent/CN107020408B','https://patents.google.com/patent/US11117932B2','https://patents.google.com/patent/CN109409389B','https://patents.google.com/patent/CN112017135B','https://patents.google.com/patent/US9031631B2','https://patents.google.com/patent/CN100469321C','https://patents.google.com/patent/CN101226646B','https://patents.google.com/patent/US10178204B2','https://patents.google.com/patent/HK1083073A1','https://patents.google.com/patent/CN108823733B','https://patents.google.com/patent/CN205976197U','https://patents.google.com/patent/CN109980495B','https://patents.google.com/patent/CN103086655B','https://patents.google.com/patent/CN101239824B','https://patents.google.com/patent/US9611256B2','https://patents.google.com/patent/CN108508097B','https://patents.google.com/patent/CN102708374B','https://patents.google.com/patent/US9178170B2','https://patents.google.com/patent/CN105402297B','https://patents.google.com/patent/CN108507598B','https://patents.google.com/patent/HK30053401','https://patents.google.com/patent/HK30060394','https://patents.google.com/patent/US7780979B2','https://patents.google.com/patent/TWI41436','https://patents.google.com/patent/CN105266926B','https://patents.google.com/patent/CN203717774U','https://patents.google.com/patent/US10382158B2','https://patents.google.com/patent/US10618939B2','https://patents.google.com/patent/27','https://patents.google.com/patent/CN104953781B','https://patents.google.com/patent/CN213482904U','https://patents.google.com/patent/CN104921902B','https://patents.google.com/patent/HK30031214','https://patents.google.com/patent/HK124121','https://patents.google.com/patent/CN111600188B','https://patents.google.com/patent/CN108220925B','https://patents.google.com/patent/CN102603628B','https://patents.google.com/patent/CN105872560B','https://patents.google.com/patent/CN102121194B','https://patents.google.com/patent/CN103572403B','https://patents.google.com/patent/CN101631903B3','https://patents.google.com/patent/CN104756456B','https://patents.google.com/patent/US7927788B2','https://patents.google.com/patent/CN109312600B','https://patents.google.com/patent/CN106587075B','https://patents.google.com/patent/CN107115335B','https://patents.google.com/patent/CN101773490B','https://patents.google.com/patent/CN112713488B','https://patents.google.com/patent/TWI71478','https://patents.google.com/patent/US7968083B2','https://patents.google.com/patent/CN101839703B','https://patents.google.com/patent/CN105179140B','https://patents.google.com/patent/CN105985075B','https://patents.google.com/patent/CN105576918B','https://patents.google.com/patent/CN110652061B','https://patents.google.com/patent/CN204666117U','https://patents.google.com/patent/CN102739500B','https://patents.google.com/patent/CN128459','https://patents.google.com/patent/CN109233362B','https://patents.google.com/patent/CN107459533B','https://patents.google.com/patent/CN108000512B','https://patents.google.com/patent/CN112386601B','https://patents.google.com/patent/CN110598541B','https://patents.google.com/patent/CN112448262B','https://patents.google.com/patent/CN101447079B','https://patents.google.com/patent/CN114150232B','https://patents.google.com/patent/CN110095408','https://patents.google.com/patent/JP4850248B2','https://patents.google.com/patent/CN217599308U','https://patents.google.com/patent/CN110370957B','https://patents.google.com/patent/CN113402624B','https://patents.google.com/patent/CN113901672B','https://patents.google.com/patent/GB242399','https://patents.google.com/patent/NP660656','https://patents.google.com/patent/JP5849048B2'\n);",
+        "options": {
+          "queryReplacement": "={{ $json.all_google_patent_links.map(item => \"'\" + item.replace(/'/g, \"''\") + \"'\").join(',')}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1440,
+        1000
+      ],
+      "id": "bdc98779-77da-48b4-afcb-144e74dff2ac",
+      "name": "Postgres9 - probe if all patent links in DB exist in PDF",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "kofKkYvT61G5MAFp",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Cache Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cache Info": {
+      "main": [
+        [
+          {
+            "node": "Get Patent Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Patent Link": {
+      "main": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Quality Assurance Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update AI Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality Assurance Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarization Chain": {
+      "main": [
+        [
+          {
+            "node": "Quality Assurance Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Quality Assurance Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update AI Summary": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Cache Info1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cache Info1": {
+      "main": [
+        [
+          {
+            "node": "Get Patent Link1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Patent Link1": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Set Image URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Image URL": {
+      "main": [
+        [
+          {
+            "node": "Add Back To AI Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Back To AI Summary": {
+      "main": [
+        [
+          {
+            "node": "Update AI Summary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update AI Summary1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Cache Info2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cache Info2": {
+      "main": [
+        [
+          {
+            "node": "Add Back To AI Summary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Back To AI Summary1": {
+      "main": [
+        [
+          {
+            "node": "Update AI Summary2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update AI Summary2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items3": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Cache Info3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cache Info3": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update AI Summary3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Update AI Summary3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items4": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Cache Info4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cache Info4": {
+      "main": [
+        [
+          {
+            "node": "Get Patent Link2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Patent Link2": {
+      "main": [
+        [
+          {
+            "node": "HTML1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML1": {
+      "main": [
+        [
+          {
+            "node": "Map reduce for what?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update assignees data": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Update assignees data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map reduce for what?": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres5": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items5": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Cache Info5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cache Info5": {
+      "main": [
+        [
+          {
+            "node": "Get Patent Link3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Patent Link3": {
+      "main": [
+        [
+          {
+            "node": "HTML2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML2": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Update is_cn_applied",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Binary File": {
+      "main": [
+        [
+          {
+            "node": "Read PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read PDF": {
+      "main": [
+        [
+          {
+            "node": "Code to parse records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items6": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Cache Info6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres6": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Cache Info6": {
+      "main": [
+        [
+          {
+            "node": "Postgres6",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Postgres7",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Postgres7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code to parse records": {
+      "main": [
+        [
+          {
+            "node": "Code to check duplicate",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code to check duplicate": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items6",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update is_cn_applied": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres7": {
+      "main": [
+        [
+          {
+            "node": "Postgres8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Postgres9 - probe if all patent links in DB exist in PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres8": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "561df915-802b-4bcc-a0bd-8a1a78ec3da0",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "AVwz52vkaGiMf3EE",
+  "tags": []
+}
