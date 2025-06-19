@@ -19,10 +19,10 @@ const knownCountries = [
 
 const knownDepartments = [
     'FENG/BME', 'ASO/IC', 'FAST/ITC', 'FENG/EE', 'FENG/ISE', 'FENG/EIE',
-    'FHSS/HTI', 'FENG', 'ASO', 'FAST', 'FHSS', 'IC', 'ITC', 'BME', 'EE',
-    'EIE', 'ISE', 'HTI', 'FHSS/SO', 'FENG/COMP', 'FAST/AP', 'RIIPT/RIIPT',
+    'FHSS/HTI', 'FHSS/SO', 'FENG/COMP', 'FAST/AP', 'RIIPT/RIIPT',
     'FENG/ME', 'FAST/ABCT', 'FCE/CEE', 'FCE/BSE', 'FCE/LSGI', 'SD/SD',
-    'FB/MM', 'LGT/LGT', 'FHSS/RS', 'FHSS/SN', 'PDO/PDO', 'DP/DP', 'OR/OR'
+    'FB/MM', 'LGT/LGT', 'FHSS/RS', 'FHSS/SN', 'PDO/PDO', 'DP/DP', 'OR/OR',
+    '(ITDO)'
 ];
 
 const knownTechSectors = [
