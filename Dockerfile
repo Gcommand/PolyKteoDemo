@@ -1,7 +1,14 @@
 ﻿FROM python:3.11-slim
 
-# Attempt to update C++ runtime - CAUTION!
-RUN apt-get update && apt-get install -y --only-upgrade libstdc++6 gcc g++ # May need specific versions or sources
+# Install system dependencies and networking tools
+RUN apt-get update && apt-get install -y \
+    --only-upgrade libstdc++6 gcc g++ \
+    iputils-ping \
+    dnsutils \
+    curl \
+    net-tools \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . /app

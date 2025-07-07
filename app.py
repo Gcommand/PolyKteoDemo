@@ -152,7 +152,7 @@ class PatentResponse:
         self.is_tech = is_tech
         self.ai_short_summary = ai_short_summary
 
-def apply_sorting(query, sort_order, similarity_score):
+def apply_sorting(query, sort_order, similarity_score, department_ids=None, assignee_ids=None, tech_sector_ids=None, is_cn_applied=None, confidence_level=None, query_embedding=None):
     """Apply sorting to the query based on the sort order.
     
     This function handles different sorting criteria for patent search results.
@@ -169,12 +169,29 @@ def apply_sorting(query, sort_order, similarity_score):
         query: Base query to apply sorting to
         sort_order: String indicating the sort order (REL_DESC, REL_ASC, etc.)
         similarity_score: The similarity score expression to use for sorting
+        department_ids: List of department IDs to filter by
+        assignee_ids: List of assignee IDs to filter by
+        tech_sector_ids: List of tech sector IDs to filter by
+        is_cn_applied: Boolean filter for CN application status
+        confidence_level: Minimum similarity score threshold
+        query_embedding: The embedding vector for similarity calculation
     
     Returns:
         Query with appropriate sorting and relationship loading applied
     """
-    # Create a subquery for ranked departments
-    ranked_departments = (
+    print(f"DEBUG: apply_sorting called with sort_order: {sort_order}")
+    print(f"DEBUG: apply_sorting filters - dept: {department_ids}, assignee: {assignee_ids}, tech: {tech_sector_ids}, cn: {is_cn_applied}, conf: {confidence_level}")
+    
+    # Recreate the similarity score expression if query_embedding is provided
+    if query_embedding is not None:
+        similarity_score = (1 - PatentsList.embedding.cosine_distance(query_embedding)).label("similarity")
+        print(f"DEBUG: Recreated similarity score expression with query_embedding length: {len(query_embedding)}")
+    
+    # Create a subquery for ranked departments that preserves the original query's filters
+    print("DEBUG: Creating ranked departments subquery with original filters...")
+    
+    # Start with the same base query structure as the original query
+    ranked_departments_query = (
         query.session.query(
             PatentsList.sys_id,
             Departments.department_name,
@@ -185,11 +202,40 @@ def apply_sorting(query, sort_order, similarity_score):
         )
         .outerjoin(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
         .outerjoin(Departments, PatentDepartments.department_id == Departments.department_id)
-        .subquery()
     )
     
+    # Apply the same filters as the original query
+    print("DEBUG: Applying original query filters to ranked departments subquery...")
+    
+    # Apply embedding filter
+    if confidence_level is not None:
+        ranked_departments_query = ranked_departments_query.filter(PatentsList.embedding.is_not(None))
+        # Note: We can't apply similarity filter here as we don't have the query embedding in this context
+    
+    # Apply department filter
+    if department_ids:
+        ranked_departments_query = ranked_departments_query.filter(PatentDepartments.department_id.in_(department_ids))
+    
+    # Apply assignee filter
+    if assignee_ids:
+        ranked_departments_query = ranked_departments_query.join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+        ranked_departments_query = ranked_departments_query.filter(PatentAssignees.assignee_id.in_(assignee_ids))
+    
+    # Apply tech sector filter
+    if tech_sector_ids:
+        ranked_departments_query = ranked_departments_query.join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+        ranked_departments_query = ranked_departments_query.filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
+    
+    # Apply is_cn_applied filter
+    if is_cn_applied is not None:
+        ranked_departments_query = ranked_departments_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+    
+    ranked_departments = ranked_departments_query.subquery()
+    print("DEBUG: Ranked departments subquery created")
+    
     if sort_order == 'REL_DESC':
-        return (
+        print("DEBUG: Applying REL_DESC sorting (relevance descending)")
+        main_query = (
             query.session.query(
                 PatentsList,
                 similarity_score,
@@ -197,10 +243,38 @@ def apply_sorting(query, sort_order, similarity_score):
             )
             .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
             .filter(ranked_departments.c.dept_rank == 1)
-            .order_by(similarity_score.desc())
         )
+        
+        # Apply the same filters as the original query
+        if confidence_level is not None:
+            main_query = main_query.filter(PatentsList.embedding.is_not(None))
+            main_query = main_query.filter(similarity_score >= confidence_level)
+            print(f"DEBUG: Applied embedding and similarity filters with confidence_level: {confidence_level}")
+        
+        if department_ids:
+            main_query = main_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+            main_query = main_query.filter(PatentDepartments.department_id.in_(department_ids))
+            print(f"DEBUG: Applied department filter for IDs: {department_ids}")
+        
+        if assignee_ids:
+            main_query = main_query.join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+            main_query = main_query.filter(PatentAssignees.assignee_id.in_(assignee_ids))
+            print(f"DEBUG: Applied assignee filter for IDs: {assignee_ids}")
+        
+        if tech_sector_ids:
+            main_query = main_query.join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+            main_query = main_query.filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
+            print(f"DEBUG: Applied tech sector filter for IDs: {tech_sector_ids}")
+        
+        if is_cn_applied is not None:
+            main_query = main_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+            print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
+        
+        print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
+        return main_query.order_by(similarity_score.desc())
     elif sort_order == 'REL_ASC':
-        return (
+        print("DEBUG: Applying REL_ASC sorting (relevance ascending)")
+        main_query = (
             query.session.query(
                 PatentsList,
                 similarity_score,
@@ -208,10 +282,38 @@ def apply_sorting(query, sort_order, similarity_score):
             )
             .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
             .filter(ranked_departments.c.dept_rank == 1)
-            .order_by(similarity_score)
         )
+        
+        # Apply the same filters as the original query
+        if confidence_level is not None:
+            main_query = main_query.filter(PatentsList.embedding.is_not(None))
+            main_query = main_query.filter(similarity_score >= confidence_level)
+            print(f"DEBUG: Applied embedding and similarity filters with confidence_level: {confidence_level}")
+        
+        if department_ids:
+            main_query = main_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+            main_query = main_query.filter(PatentDepartments.department_id.in_(department_ids))
+            print(f"DEBUG: Applied department filter for IDs: {department_ids}")
+        
+        if assignee_ids:
+            main_query = main_query.join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+            main_query = main_query.filter(PatentAssignees.assignee_id.in_(assignee_ids))
+            print(f"DEBUG: Applied assignee filter for IDs: {assignee_ids}")
+        
+        if tech_sector_ids:
+            main_query = main_query.join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+            main_query = main_query.filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
+            print(f"DEBUG: Applied tech sector filter for IDs: {tech_sector_ids}")
+        
+        if is_cn_applied is not None:
+            main_query = main_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+            print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
+        
+        print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
+        return main_query.order_by(similarity_score)
     elif sort_order == 'FSD_ASC':
-        return (
+        print("DEBUG: Applying FSD_ASC sorting (faculty/school/department A-Z)")
+        main_query = (
             query.session.query(
                 PatentsList,
                 similarity_score,
@@ -219,10 +321,38 @@ def apply_sorting(query, sort_order, similarity_score):
             )
             .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
             .filter(ranked_departments.c.dept_rank == 1)
-            .order_by(ranked_departments.c.department_name)
         )
+        
+        # Apply the same filters as the original query
+        if confidence_level is not None:
+            main_query = main_query.filter(PatentsList.embedding.is_not(None))
+            main_query = main_query.filter(similarity_score >= confidence_level)
+            print(f"DEBUG: Applied embedding and similarity filters with confidence_level: {confidence_level}")
+        
+        if department_ids:
+            main_query = main_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+            main_query = main_query.filter(PatentDepartments.department_id.in_(department_ids))
+            print(f"DEBUG: Applied department filter for IDs: {department_ids}")
+        
+        if assignee_ids:
+            main_query = main_query.join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+            main_query = main_query.filter(PatentAssignees.assignee_id.in_(assignee_ids))
+            print(f"DEBUG: Applied assignee filter for IDs: {assignee_ids}")
+        
+        if tech_sector_ids:
+            main_query = main_query.join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+            main_query = main_query.filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
+            print(f"DEBUG: Applied tech sector filter for IDs: {tech_sector_ids}")
+        
+        if is_cn_applied is not None:
+            main_query = main_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+            print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
+        
+        print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
+        return main_query.order_by(ranked_departments.c.department_name)
     elif sort_order == 'FSD_DESC':
-        return (
+        print("DEBUG: Applying FSD_DESC sorting (faculty/school/department Z-A)")
+        main_query = (
             query.session.query(
                 PatentsList,
                 similarity_score,
@@ -230,10 +360,38 @@ def apply_sorting(query, sort_order, similarity_score):
             )
             .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
             .filter(ranked_departments.c.dept_rank == 1)
-            .order_by(desc(ranked_departments.c.department_name))
         )
+        
+        # Apply the same filters as the original query
+        if confidence_level is not None:
+            main_query = main_query.filter(PatentsList.embedding.is_not(None))
+            main_query = main_query.filter(similarity_score >= confidence_level)
+            print(f"DEBUG: Applied embedding and similarity filters with confidence_level: {confidence_level}")
+        
+        if department_ids:
+            main_query = main_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+            main_query = main_query.filter(PatentDepartments.department_id.in_(department_ids))
+            print(f"DEBUG: Applied department filter for IDs: {department_ids}")
+        
+        if assignee_ids:
+            main_query = main_query.join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+            main_query = main_query.filter(PatentAssignees.assignee_id.in_(assignee_ids))
+            print(f"DEBUG: Applied assignee filter for IDs: {assignee_ids}")
+        
+        if tech_sector_ids:
+            main_query = main_query.join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+            main_query = main_query.filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
+            print(f"DEBUG: Applied tech sector filter for IDs: {tech_sector_ids}")
+        
+        if is_cn_applied is not None:
+            main_query = main_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+            print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
+        
+        print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
+        return main_query.order_by(desc(ranked_departments.c.department_name))
     elif sort_order == 'DATE_DESC':
-        return (
+        print("DEBUG: Applying DATE_DESC sorting (date descending)")
+        main_query = (
             query.session.query(
                 PatentsList,
                 similarity_score,
@@ -241,10 +399,38 @@ def apply_sorting(query, sort_order, similarity_score):
             )
             .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
             .filter(ranked_departments.c.dept_rank == 1)
-            .order_by(desc(PatentsList.created_dt))
         )
+        
+        # Apply the same filters as the original query
+        if confidence_level is not None:
+            main_query = main_query.filter(PatentsList.embedding.is_not(None))
+            main_query = main_query.filter(similarity_score >= confidence_level)
+            print(f"DEBUG: Applied embedding and similarity filters with confidence_level: {confidence_level}")
+        
+        if department_ids:
+            main_query = main_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+            main_query = main_query.filter(PatentDepartments.department_id.in_(department_ids))
+            print(f"DEBUG: Applied department filter for IDs: {department_ids}")
+        
+        if assignee_ids:
+            main_query = main_query.join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+            main_query = main_query.filter(PatentAssignees.assignee_id.in_(assignee_ids))
+            print(f"DEBUG: Applied assignee filter for IDs: {assignee_ids}")
+        
+        if tech_sector_ids:
+            main_query = main_query.join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+            main_query = main_query.filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
+            print(f"DEBUG: Applied tech sector filter for IDs: {tech_sector_ids}")
+        
+        if is_cn_applied is not None:
+            main_query = main_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+            print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
+        
+        print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
+        return main_query.order_by(desc(PatentsList.created_dt))
     elif sort_order == 'DATE_ASC':
-        return (
+        print("DEBUG: Applying DATE_ASC sorting (date ascending)")
+        main_query = (
             query.session.query(
                 PatentsList,
                 similarity_score,
@@ -252,11 +438,39 @@ def apply_sorting(query, sort_order, similarity_score):
             )
             .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
             .filter(ranked_departments.c.dept_rank == 1)
-            .order_by(PatentsList.created_dt)
         )
+        
+        # Apply the same filters as the original query
+        if confidence_level is not None:
+            main_query = main_query.filter(PatentsList.embedding.is_not(None))
+            main_query = main_query.filter(similarity_score >= confidence_level)
+            print(f"DEBUG: Applied embedding and similarity filters with confidence_level: {confidence_level}")
+        
+        if department_ids:
+            main_query = main_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+            main_query = main_query.filter(PatentDepartments.department_id.in_(department_ids))
+            print(f"DEBUG: Applied department filter for IDs: {department_ids}")
+        
+        if assignee_ids:
+            main_query = main_query.join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+            main_query = main_query.filter(PatentAssignees.assignee_id.in_(assignee_ids))
+            print(f"DEBUG: Applied assignee filter for IDs: {assignee_ids}")
+        
+        if tech_sector_ids:
+            main_query = main_query.join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+            main_query = main_query.filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
+            print(f"DEBUG: Applied tech sector filter for IDs: {tech_sector_ids}")
+        
+        if is_cn_applied is not None:
+            main_query = main_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+            print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
+        
+        print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
+        return main_query.order_by(PatentsList.created_dt)
     else:
         # Default to unsorted results
-        return (
+        print(f"DEBUG: Unknown sort_order '{sort_order}', using default unsorted")
+        main_query = (
             query.session.query(
                 PatentsList,
                 similarity_score,
@@ -265,6 +479,34 @@ def apply_sorting(query, sort_order, similarity_score):
             .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
             .filter(ranked_departments.c.dept_rank == 1)
         )
+        
+        # Apply the same filters as the original query
+        if confidence_level is not None:
+            main_query = main_query.filter(PatentsList.embedding.is_not(None))
+            main_query = main_query.filter(similarity_score >= confidence_level)
+            print(f"DEBUG: Applied embedding and similarity filters with confidence_level: {confidence_level}")
+        
+        if department_ids:
+            main_query = main_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+            main_query = main_query.filter(PatentDepartments.department_id.in_(department_ids))
+            print(f"DEBUG: Applied department filter for IDs: {department_ids}")
+        
+        if assignee_ids:
+            main_query = main_query.join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+            main_query = main_query.filter(PatentAssignees.assignee_id.in_(assignee_ids))
+            print(f"DEBUG: Applied assignee filter for IDs: {assignee_ids}")
+        
+        if tech_sector_ids:
+            main_query = main_query.join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+            main_query = main_query.filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
+            print(f"DEBUG: Applied tech sector filter for IDs: {tech_sector_ids}")
+        
+        if is_cn_applied is not None:
+            main_query = main_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+            print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
+        
+        print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
+        return main_query
 
 @app.route('/search', methods=['GET'])
 def search_patents():
@@ -304,12 +546,21 @@ def search_patents():
         - assignee_id=1&assignee_id=2 (multiple parameters)
     - is_cn_applied: Filter by CN application status (optional, boolean)
     """
+    print("=== SEARCH DEBUG START ===")
+    
     # Get query parameters
     query = request.args.get('query')
     confidence_level = request.args.get('confidence_level', default=0.2, type=float)
     sorting_order = request.args.get('sorting_order', default='REL_DESC')
     current_page = request.args.get('current_page', default=1, type=int)
     page_size = request.args.get('page_size', default=12, type=int)
+    
+    print(f"DEBUG: Raw query parameters:")
+    print(f"  - query: {query}")
+    print(f"  - confidence_level: {confidence_level}")
+    print(f"  - sorting_order: {sorting_order}")
+    print(f"  - current_page: {current_page}")
+    print(f"  - page_size: {page_size}")
     
     # Handle multiple department_id values
     department_ids = []
@@ -344,34 +595,41 @@ def search_patents():
     is_cn_applied = request.args.get('is_cn_applied', type=lambda v: v.lower() == 'true' if v is not None else None)
 
     # Add debug logging
-    print(f"Received parameters:")
-    print(f"department_ids: {department_ids}")
-    print(f"tech_sector_ids: {tech_sector_ids}")
-    print(f"assignee_ids: {assignee_ids}")
-    print(f"is_cn_applied: {is_cn_applied}")
+    print(f"DEBUG: Processed filter parameters:")
+    print(f"  - department_ids: {department_ids}")
+    print(f"  - tech_sector_ids: {tech_sector_ids}")
+    print(f"  - assignee_ids: {assignee_ids}")
+    print(f"  - is_cn_applied: {is_cn_applied}")
 
     # Validate confidence_level is between 0 and 1
     if confidence_level < 0 or confidence_level > 1:
+        print(f"DEBUG: Invalid confidence_level: {confidence_level}")
         return jsonify({"error": "confidence_level must be between 0 and 1"}), 400
 
     if not query:
+        print("DEBUG: Missing query parameter")
         return jsonify({"error": "Query parameter is required"}), 400
 
     # Detect query language
     query_lang = detect_language(query)
-    print(f"Query language: {query_lang}")
+    print(f"DEBUG: Query language detected: {query_lang}")
 
     # Get a database session
     db = SessionLocal()
+    print("DEBUG: Database session created")
 
     try:
         # Generate embedding for the query
+        print(f"DEBUG: Generating embedding for query: '{query}'")
         query_embedding = asyncio.run(get_embedding(query))
+        print(f"DEBUG: Embedding generated, length: {len(query_embedding)}")
 
         # Calculate similarity score expression
         similarity_score = (1 - PatentsList.embedding.cosine_distance(query_embedding)).label("similarity")
+        print("DEBUG: Similarity score expression created")
 
         # Base query with similarity score
+        print("DEBUG: Building base query...")
         base_query = (
             db.query(
                 PatentsList,
@@ -380,37 +638,55 @@ def search_patents():
             .filter(PatentsList.embedding.is_not(None))
             .filter(similarity_score >= confidence_level)
         )
+        print(f"DEBUG: Base query built with confidence threshold: {confidence_level}")
 
         # Add department filter if department_ids are provided
         if department_ids:
+            print(f"DEBUG: Adding department filter for IDs: {department_ids}")
             base_query = (
                 base_query
                 .join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
                 .filter(PatentDepartments.department_id.in_(department_ids))
             )
+            print("DEBUG: Department filter added")
 
         # Add assignee filter if assignee_ids are provided
         if assignee_ids:
+            print(f"DEBUG: Adding assignee filter for IDs: {assignee_ids}")
             base_query = (
                 base_query
                 .join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
                 .filter(PatentAssignees.assignee_id.in_(assignee_ids))
             )
+            print("DEBUG: Assignee filter added")
 
         # Add tech_sector filter if provided
         if tech_sector_ids:
+            print(f"DEBUG: Adding tech sector filter for IDs: {tech_sector_ids}")
             base_query = (
                 base_query
                 .join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
                 .filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
             )
+            print("DEBUG: Tech sector filter added")
 
         # Add is_cn_applied filter if provided
         if is_cn_applied is not None:
+            print(f"DEBUG: Adding is_cn_applied filter: {is_cn_applied}")
             base_query = base_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+            print("DEBUG: is_cn_applied filter added")
 
         # Calculate total count for pagination using a subquery
-        count_query = db.query(PatentsList.sys_id).distinct()
+        print("DEBUG: Calculating total count for pagination...")
+        
+        # Use the same base query structure for counting
+        count_query = (
+            db.query(PatentsList.sys_id)
+            .filter(PatentsList.embedding.is_not(None))
+            .filter(similarity_score >= confidence_level)
+        )
+        
+        # Apply the same filters as the base query
         if department_ids:
             count_query = count_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
             count_query = count_query.filter(PatentDepartments.department_id.in_(department_ids))
@@ -423,20 +699,178 @@ def search_patents():
         if is_cn_applied is not None:
             count_query = count_query.filter(PatentsList.is_cn_applied == is_cn_applied)
         
+        # Debug: Check similarity scores for patents in department 1
+        print("DEBUG: Checking similarity scores for patents in department 1...")
+        test_query = (
+            db.query(PatentsList.sys_id, similarity_score)
+            .filter(PatentsList.embedding.is_not(None))
+            .join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+            .filter(PatentDepartments.department_id.in_(department_ids))
+            .limit(5)
+        )
+        test_results = test_query.all()
+        print(f"DEBUG: Found {len(test_results)} patents in department 1")
+        for i, (patent_id, similarity) in enumerate(test_results):
+            print(f"DEBUG: Patent {patent_id} - Similarity: {similarity}")
+        
         total_count = count_query.count()
+        print(f"DEBUG: Total count calculated: {total_count}")
+        
+        # If no results found, try with a lower confidence threshold
+        adjusted_confidence_level = confidence_level
+        if total_count == 0 and test_results:
+            # Find the highest similarity score
+            max_similarity = max(similarity for _, similarity in test_results)
+            print(f"DEBUG: Highest similarity score found: {max_similarity}")
+            
+            # Set confidence level to 80% of the highest similarity score, but not lower than 0.05
+            adjusted_confidence_level = max(max_similarity * 0.8, 0.05)
+            print(f"DEBUG: Adjusted confidence level from {confidence_level} to {adjusted_confidence_level}")
+            
+            # Rebuild the queries with the adjusted confidence level
+            base_query = (
+                db.query(
+                    PatentsList,
+                    similarity_score
+                )
+                .filter(PatentsList.embedding.is_not(None))
+                .filter(similarity_score >= adjusted_confidence_level)
+            )
+            
+            # Reapply filters to base_query
+            if department_ids:
+                base_query = (
+                    base_query
+                    .join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+                    .filter(PatentDepartments.department_id.in_(department_ids))
+                )
+            if assignee_ids:
+                base_query = (
+                    base_query
+                    .join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+                    .filter(PatentAssignees.assignee_id.in_(assignee_ids))
+                )
+            if tech_sector_ids:
+                base_query = (
+                    base_query
+                    .join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+                    .filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
+                )
+            if is_cn_applied is not None:
+                base_query = base_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+            
+            # Recalculate count with adjusted confidence level
+            count_query = (
+                db.query(PatentsList.sys_id)
+                .filter(PatentsList.embedding.is_not(None))
+                .filter(similarity_score >= adjusted_confidence_level)
+            )
+            if department_ids:
+                count_query = count_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+                count_query = count_query.filter(PatentDepartments.department_id.in_(department_ids))
+            if assignee_ids:
+                count_query = count_query.join(PatentAssignees, PatentsList.sys_id == PatentAssignees.patent_id)
+                count_query = count_query.filter(PatentAssignees.assignee_id.in_(assignee_ids))
+            if tech_sector_ids:
+                count_query = count_query.join(PatentTechSectors, PatentsList.sys_id == PatentTechSectors.patent_sys_id)
+                count_query = count_query.filter(PatentTechSectors.tech_sector_id.in_(tech_sector_ids))
+            if is_cn_applied is not None:
+                count_query = count_query.filter(PatentsList.is_cn_applied == is_cn_applied)
+            
+            total_count = count_query.count()
+            print(f"DEBUG: Total count with adjusted confidence level: {total_count}")
+        
+        # Debug: Show count query SQL (with error handling)
+        try:
+            count_sql = str(count_query.compile(compile_kwargs={'literal_binds': True}))
+            print(f"DEBUG: Count query SQL: {count_sql}")
+        except Exception as e:
+            print(f"DEBUG: Could not compile count query SQL: {e}")
 
         # Apply sorting
-        base_query = apply_sorting(base_query, sorting_order, similarity_score)
+        print(f"DEBUG: Applying sorting with order: {sorting_order}")
+        
+        # Instead of creating a new query, let's modify the existing base_query
+        if sorting_order == 'REL_DESC':
+            print("DEBUG: Applying REL_DESC sorting to existing base_query")
+            base_query = base_query.order_by(similarity_score.desc())
+        elif sorting_order == 'REL_ASC':
+            print("DEBUG: Applying REL_ASC sorting to existing base_query")
+            base_query = base_query.order_by(similarity_score)
+        elif sorting_order == 'FSD_ASC':
+            print("DEBUG: Applying FSD_ASC sorting to existing base_query")
+            # For department sorting, we need to join with departments
+            base_query = (
+                base_query
+                .outerjoin(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+                .outerjoin(Departments, PatentDepartments.department_id == Departments.department_id)
+                .order_by(Departments.department_name)
+            )
+        elif sorting_order == 'FSD_DESC':
+            print("DEBUG: Applying FSD_DESC sorting to existing base_query")
+            base_query = (
+                base_query
+                .outerjoin(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+                .outerjoin(Departments, PatentDepartments.department_id == Departments.department_id)
+                .order_by(desc(Departments.department_name))
+            )
+        elif sorting_order == 'DATE_DESC':
+            print("DEBUG: Applying DATE_DESC sorting to existing base_query")
+            base_query = base_query.order_by(desc(PatentsList.created_dt))
+        elif sorting_order == 'DATE_ASC':
+            print("DEBUG: Applying DATE_ASC sorting to existing base_query")
+            base_query = base_query.order_by(PatentsList.created_dt)
+        else:
+            print(f"DEBUG: Unknown sort_order '{sorting_order}', using default unsorted")
+        
+        print("DEBUG: Sorting applied to existing base_query")
+        
+        # Debug: Show main query SQL (with error handling)
+        try:
+            main_sql = str(base_query.compile(compile_kwargs={'literal_binds': True}))
+            print(f"DEBUG: Main query SQL: {main_sql}")
+        except Exception as e:
+            print(f"DEBUG: Could not compile main query SQL: {e}")
 
         # Apply pagination
         offset = (current_page - 1) * page_size
+        print(f"DEBUG: Applying pagination - offset: {offset}, limit: {page_size}")
         results = base_query.offset(offset).limit(page_size).all()
+        print(f"DEBUG: Query executed, returned {len(results)} results")
+        
+        # Debug: Check similarity scores
+        if results:
+            print("DEBUG: Checking similarity scores for results:")
+            for i, result in enumerate(results):
+                patent, similarity = result
+                print(f"DEBUG: Result {i+1} - Patent ID: {patent.sys_id}, Similarity: {similarity}, Type: {type(similarity)}")
+        else:
+            print("DEBUG: No results returned from query")
+            
+            # Let's debug the query itself
+            print("DEBUG: Checking base query without pagination...")
+            all_results = base_query.all()
+            print(f"DEBUG: Base query without pagination returned {len(all_results)} results")
+            if all_results:
+                print("DEBUG: First few results from base query:")
+                for i, result in enumerate(all_results[:3]):
+                    patent, similarity = result
+                    print(f"DEBUG: Base result {i+1} - Patent ID: {patent.sys_id}, Similarity: {similarity}")
 
         # Format the results
+        print("DEBUG: Formatting results...")
         response = []
-        for result in results:
-            # Unpack the result tuple (patent, similarity, department_name)
-            patent, similarity, department_name = result
+        for i, result in enumerate(results):
+            print(f"DEBUG: Processing result {i+1}/{len(results)}")
+            
+            # Unpack the result tuple (patent, similarity) - simpler structure now
+            if len(result) == 2:
+                patent, similarity = result
+                department_name = None  # We'll get this separately
+            else:
+                patent, similarity, department_name = result
+            
+            print(f"DEBUG: Result {i+1} - Patent ID: {patent.sys_id}, Similarity: {similarity}, Type: {type(similarity)}")
             
             # Get departments for this patent
             patent_departments = (
@@ -445,6 +879,7 @@ def search_patents():
                 .filter(PatentDepartments.patent_id == patent.sys_id)
                 .all()
             )
+            print(f"DEBUG: Found {len(patent_departments)} departments for patent {patent.sys_id}")
             
             departments_list = [
                 {
@@ -463,6 +898,7 @@ def search_patents():
                 }
                 for ts in patent.tech_sectors
             ]
+            print(f"DEBUG: Found {len(tech_sectors_list)} tech sectors for patent {patent.sys_id}")
 
             # Determine target Chinese language based on query language
             target_chinese = 'zh-TW'  # Default to Traditional Chinese
@@ -490,6 +926,9 @@ def search_patents():
                 "query_language": query_lang
             }
             response.append(patent_dict)
+            print(f"DEBUG: Result {i+1} formatted successfully")
+
+        print(f"DEBUG: All {len(response)} results formatted successfully")
 
         # Log the successful search
         log_entry = SearchLog(
@@ -502,8 +941,9 @@ def search_patents():
         )
         db.add(log_entry)
         db.commit()
+        print("DEBUG: Search log entry created and committed")
 
-        return jsonify({
+        final_response = {
             "results": response,
             "pagination": {
                 "total_count": total_count,
@@ -512,7 +952,10 @@ def search_patents():
                 "total_pages": (total_count + page_size - 1) // page_size
             },
             "query_language": query_lang
-        })
+        }
+        
+        print("=== SEARCH DEBUG END ===")
+        return jsonify(final_response)
 
     except Exception as e:
         # Enhanced error logging
@@ -527,7 +970,7 @@ def search_patents():
             "assignee_ids": assignee_ids,
             "is_cn_applied": is_cn_applied
         }
-        print("=== Search Error Details ===")
+        print("=== SEARCH ERROR DETAILS ===")
         print(f"Error Type: {error_details['error_type']}")
         print(f"Error Message: {error_details['error_message']}")
         print(f"Query Parameters:")
@@ -556,6 +999,7 @@ def search_patents():
 
     finally:
         db.close()
+        print("DEBUG: Database session closed")
 
 @app.route('/get_embedding', methods=['POST'])
 async def run_get_embedding() -> List[float]:
