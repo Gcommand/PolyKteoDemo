@@ -313,14 +313,15 @@ def apply_sorting(query, sort_order, similarity_score, department_ids=None, assi
         return main_query.order_by(similarity_score)
     elif sort_order == 'FSD_ASC':
         print("DEBUG: Applying FSD_ASC sorting (faculty/school/department A-Z)")
+        # For department sorting, we need to join directly with departments to get proper sorting
         main_query = (
             query.session.query(
                 PatentsList,
                 similarity_score,
-                ranked_departments.c.department_name
+                Departments.department_name
             )
-            .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
-            .filter(ranked_departments.c.dept_rank == 1)
+            .outerjoin(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+            .outerjoin(Departments, PatentDepartments.department_id == Departments.department_id)
         )
         
         # Apply the same filters as the original query
@@ -330,7 +331,6 @@ def apply_sorting(query, sort_order, similarity_score, department_ids=None, assi
             print(f"DEBUG: Applied embedding and similarity filters with confidence_level: {confidence_level}")
         
         if department_ids:
-            main_query = main_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
             main_query = main_query.filter(PatentDepartments.department_id.in_(department_ids))
             print(f"DEBUG: Applied department filter for IDs: {department_ids}")
         
@@ -349,17 +349,19 @@ def apply_sorting(query, sort_order, similarity_score, department_ids=None, assi
             print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
         
         print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
-        return main_query.order_by(ranked_departments.c.department_name)
+        # Use binary collation to match Python's default string comparison
+        return main_query.order_by(Departments.department_name.collate('C').nulls_last(), PatentsList.sys_id)
     elif sort_order == 'FSD_DESC':
         print("DEBUG: Applying FSD_DESC sorting (faculty/school/department Z-A)")
+        # For department sorting, we need to join directly with departments to get proper sorting
         main_query = (
             query.session.query(
                 PatentsList,
                 similarity_score,
-                ranked_departments.c.department_name
+                Departments.department_name
             )
-            .outerjoin(ranked_departments, PatentsList.sys_id == ranked_departments.c.sys_id)
-            .filter(ranked_departments.c.dept_rank == 1)
+            .outerjoin(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
+            .outerjoin(Departments, PatentDepartments.department_id == Departments.department_id)
         )
         
         # Apply the same filters as the original query
@@ -369,7 +371,6 @@ def apply_sorting(query, sort_order, similarity_score, department_ids=None, assi
             print(f"DEBUG: Applied embedding and similarity filters with confidence_level: {confidence_level}")
         
         if department_ids:
-            main_query = main_query.join(PatentDepartments, PatentsList.sys_id == PatentDepartments.patent_id)
             main_query = main_query.filter(PatentDepartments.department_id.in_(department_ids))
             print(f"DEBUG: Applied department filter for IDs: {department_ids}")
         
@@ -388,7 +389,8 @@ def apply_sorting(query, sort_order, similarity_score, department_ids=None, assi
             print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
         
         print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
-        return main_query.order_by(desc(ranked_departments.c.department_name))
+        # Use binary collation to match Python's default string comparison
+        return main_query.order_by(desc(Departments.department_name.collate('C')).nulls_last(), PatentsList.sys_id)
     elif sort_order == 'DATE_DESC':
         print("DEBUG: Applying DATE_DESC sorting (date descending)")
         main_query = (
