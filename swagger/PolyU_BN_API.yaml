@@ -1,0 +1,351 @@
+﻿openapi: 3.0.3
+info:
+  title: PolyU KTEO Patent Search API
+  description: |-
+    This API provides services for searching and retrieving patent information from the PolyU KTEO database.
+    It supports vector-based semantic search, filtering by various criteria, and language-specific content delivery.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+tags:
+  - name: Search
+    description: Endpoints for searching patents
+  - name: Filters
+    description: Endpoints for retrieving filter options like assignees and tech sectors
+  - name: Utilities
+    description: Helper and administrative endpoints
+  - name: Data Management
+    description: Endpoints for managing backend data like embeddings
+
+paths:
+  /search:
+    get:
+      tags:
+        - Search
+      summary: Search for patents
+      description: |-
+        Search for patents similar to a query text using vector embeddings.
+        Results can be filtered, sorted, and paginated.
+        The language of the AI-generated summaries in the response will be adapted based on the detected language of the query.
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: The search query text to find similar patents.
+          schema:
+            type: string
+            example: "nanotechnology in medicine"
+        - name: confidence_level
+          in: query
+          description: Minimum similarity score threshold (from 0.0 to 1.0).
+          schema:
+            type: number
+            format: float
+            default: 0.2
+            minimum: 0
+            maximum: 1
+        - name: sorting_order
+          in: query
+          description: The sort order for the results.
+          schema:
+            type: string
+            default: REL_DESC
+            enum:
+              - REL_DESC
+              - REL_ASC
+              - FSD_ASC
+              - FSD_DESC
+              - DATE_DESC
+              - DATE_ASC
+        - name: current_page
+          in: query
+          description: The page number for pagination.
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: page_size
+          in: query
+          description: The number of results to return per page.
+          schema:
+            type: integer
+            default: 12
+            minimum: 1
+        - name: department
+          in: query
+          description: Comma-separated list of department IDs to filter by.
+          schema:
+            type: string
+            example: "1,5,12"
+        - name: tech_sector_id
+          in: query
+          description: Comma-separated list of tech sector IDs to filter by.
+          schema:
+            type: string
+            example: "3,8"
+        - name: assignee_id
+          in: query
+          description: Comma-separated list of assignee IDs to filter by.
+          schema:
+            type: string
+            example: "22"
+        - name: is_cn_applied
+          in: query
+          description: Filter by CN application status.
+          schema:
+            type: boolean
+            example: true
+      responses:
+        '200':
+          description: Successful search operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Bad Request - Invalid or missing parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tech_sectors:
+    get:
+      tags:
+        - Filters
+      summary: Get all tech sectors
+      description: Retrieves a list of all unique tech sectors available for filtering.
+      responses:
+        '200':
+          description: A list of tech sectors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TechSector'
+                  total_count:
+                    type: integer
+                    example: 50
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /poly_assignees:
+    get:
+      tags:
+        - Filters
+      summary: Get PolyU-affiliated assignees
+      description: Retrieves a list of all assignees where `is_poly` is TRUE.
+      responses:
+        '200':
+          description: A list of PolyU assignees.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Assignee'
+                  total_count:
+                    type: integer
+                    example: 15
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /get_embedding:
+    post:
+      tags:
+        - Utilities
+      summary: Get embedding for a text
+      description: Generates and returns an embedding vector for the provided text using the backend model.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  example: "This is a test sentence for embedding."
+      responses:
+        '200':
+          description: Successfully generated embedding vector.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: number
+                  format: float
+                example: [0.01, -0.02, ..., 0.05]
+
+  /update_embedding:
+    get:
+      tags:
+        - Data Management
+      summary: Update patent embeddings
+      description: Triggers a background process to update embeddings for patents in the database that are missing them.
+      responses:
+        '200':
+          description: The update process was triggered successfully.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Successfully updated embedding"
+
+  /health:
+    get:
+      tags:
+        - Utilities
+      summary: Health Check
+      description: A simple endpoint to check if the API service is running.
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+
+components:
+  schemas:
+    Department:
+      type: object
+      properties:
+        department_id:
+          type: integer
+          example: 1
+        department_name:
+          type: string
+          example: "Department of Applied Biology and Chemical Technology"
+        abbreviation:
+          type: string
+          example: "ABCT"
+    TechSector:
+      type: object
+      properties:
+        tech_sector_id:
+          type: integer
+          example: 8
+        tech_sector_name:
+          type: string
+          example: "Advanced Materials"
+    Assignee:
+      type: object
+      properties:
+        assignee_id:
+          type: integer
+          example: 22
+        assignee_name:
+          type: string
+          example: "PolyU-Shenzhen Technology and Innovation Research Institute (Futian)"
+        is_poly:
+          type: boolean
+          example: true
+    Patent:
+      type: object
+      properties:
+        sys_id:
+          type: integer
+          example: 1001
+        official_title:
+          type: string
+          example: "A NOVEL METHOD FOR SYNTHESIZING GRAPHENE-BASED NANOCOMPOSITES"
+        tech_sectors:
+          type: array
+          items:
+            $ref: '#/components/schemas/TechSector'
+        inventor:
+          type: string
+          example: "Dr. CHAN, Tai-Man"
+        departments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Department'
+        country_region:
+          type: string
+          example: "CN"
+        google_patent_link:
+          type: string
+          format: uri
+          example: "https://patents.google.com/patent/CN102345678A"
+        ai_summary:
+          type: string
+          example: "This invention discloses a new, cost-effective method for producing graphene nanocomposites with enhanced thermal and electrical properties, suitable for applications in electronics and aerospace."
+        similarity:
+          type: number
+          format: float
+          example: 0.875
+        is_tech:
+          type: boolean
+          example: true
+        is_cn_applied:
+          type: boolean
+          example: true
+        ai_short_summary:
+          type: string
+          example: "A new method for making advanced graphene nanocomposites."
+        query_language:
+          type: string
+          example: "en"
+    Pagination:
+      type: object
+      properties:
+        total_count:
+          type: integer
+          example: 125
+        current_page:
+          type: integer
+          example: 1
+        page_size:
+          type: integer
+          example: 12
+        total_pages:
+          type: integer
+          example: 11
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Patent'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        query_language:
+          type: string
+          example: "en"
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Query parameter is required"
