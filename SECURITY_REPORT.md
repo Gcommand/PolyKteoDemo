@@ -19,8 +19,17 @@ This report documents the security vulnerabilities found in the PolyU Patent Sea
    - **Vector**: Query parameter manipulation in `current_page` parameter
    - **Example Attack**: `current_page=*)(!%20cn=*1226805346void)`
 
+3. **Severity**: Medium
+   - **Type**: Path Manipulation using Control Characters
+   - **Location**: URL path
+   - **Vector**: Control characters (0x00-0x1f, 0x7f) in URL paths
+   - **Example Attack**: `/_next/static/chunks/main-app-88242b46c281f859.js\tHTTP/1.1/../../`
+
 ### Root Cause
-The application was directly parsing user input without proper validation, allowing malicious patterns to be injected through parameter manipulation. While the application doesn't use LDAP, the injection patterns could still cause application errors or be used for reconnaissance.
+The application was directly parsing user input without proper validation, allowing malicious patterns to be injected through parameter manipulation and URL paths. Issues included:
+1. **Script Injection**: Direct parameter processing without validation
+2. **LDAP Injection**: Parameter validation gaps (false positive - app doesn't use LDAP)
+3. **Path Manipulation**: Control characters allowed in URL paths, enabling path traversal and authentication bypass
 
 ## Security Fixes Implemented
 
@@ -38,6 +47,9 @@ The application was directly parsing user input without proper validation, allow
 - Code delimiters (`;`, `{}`, `()`)
 - LDAP injection patterns (`*)`, `!(`, `cn=`, `uid=`, `ou=`, `dc=`, etc.)
 - LDAP logical operators (`||`, `&&`, `*)(`, `)(`)
+- Control characters (0x00-0x1f, 0x7f) in URL paths
+- Path traversal patterns (`../`, `..\\`, URL encoded variants)
+- HTTP protocol injection in paths (`HTTP/1.1` in URL paths)
 - Null bytes (`\x00`)
 
 ### 2. Rate Limiting
@@ -131,6 +143,18 @@ curl "http://localhost:5000/search?query=test&current_page=*)(!%20cn=*1226805346
 }
 ```
 
+**Test the Path Manipulation vulnerability (should now be blocked):**
+```bash
+curl "http://localhost:5000/_next/static/chunks/main-app-88242b46c281f859.js	HTTP/1.1/../../"
+```
+
+**Expected Response:**
+```json
+{
+  "error": "Invalid characters in URL path"
+}
+```
+
 ### Additional Test Cases
 
 1. **SQL Injection Prevention:**
@@ -161,6 +185,16 @@ curl "http://localhost:5000/search?query=test&current_page=*)(!%20cn=*1226805346
 6. **LDAP OR operator injection:**
    ```bash
    curl "http://localhost:5000/search?query=test||malicious&confidence_level=0.2"
+   ```
+
+7. **Path Traversal with Control Characters:**
+   ```bash
+   curl "http://localhost:5000/search	../../../etc/passwd"
+   ```
+
+8. **Basic Path Traversal:**
+   ```bash
+   curl "http://localhost:5000/search/../../../sensitive"
    ```
 
 All these requests should return HTTP 400 with appropriate error messages.

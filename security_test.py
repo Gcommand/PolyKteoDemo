@@ -13,73 +13,91 @@ BASE_URL = "http://localhost:5000"
 TEST_CASES = [
     {
         "name": "SQL Injection in tech_sector_id",
-        "url": f"{BASE_URL}/search?query=test&tech_sector_id=1';DROP TABLE patents;--",
+        "url": BASE_URL + "/search?query=test&tech_sector_id=1';DROP TABLE patents;--",
         "expected_status": 400,
         "description": "Tests SQL injection prevention in tech_sector_id parameter"
     },
     {
         "name": "JavaScript Injection in tech_sector_id",
-        "url": f"{BASE_URL}/search?query=test&tech_sector_id=2;var%20fs=require('fs');if(fs!=null)console.log('hacked');",
+        "url": BASE_URL + "/search?query=test&tech_sector_id=2;var%20fs=require('fs');if(fs!=null)console.log('hacked');",
         "expected_status": 400,
         "description": "Tests JavaScript injection prevention (original vulnerability)"
     },
     {
         "name": "XSS in query parameter",
-        "url": f"{BASE_URL}/search?query=<script>alert('xss')</script>&confidence_level=0.2",
+        "url": BASE_URL + "/search?query=<script>alert('xss')</script>&confidence_level=0.2",
         "expected_status": 400,
         "description": "Tests XSS prevention in query parameter"
     },
     {
         "name": "Null byte injection",
-        "url": f"{BASE_URL}/search?query=test\x00malicious&department=1",
+        "url": BASE_URL + "/search?query=test\x00malicious&department=1",
         "expected_status": 400,
         "description": "Tests null byte injection prevention"
     },
     {
         "name": "Invalid confidence level",
-        "url": f"{BASE_URL}/search?query=test&confidence_level=1.5",
+        "url": BASE_URL + "/search?query=test&confidence_level=1.5",
         "expected_status": 400,
         "description": "Tests parameter range validation"
     },
     {
         "name": "Invalid sorting order",
-        "url": f"{BASE_URL}/search?query=test&sorting_order=INVALID_ORDER",
+        "url": BASE_URL + "/search?query=test&sorting_order=INVALID_ORDER",
         "expected_status": 400,
         "description": "Tests sorting order validation"
     },
     {
         "name": "Non-numeric department ID",
-        "url": f"{BASE_URL}/search?query=test&department=abc",
+        "url": BASE_URL + "/search?query=test&department=abc",
         "expected_status": 400,
         "description": "Tests numeric parameter validation"
     },
     {
         "name": "LDAP Injection in current_page (original vulnerability)",
-        "url": f"{BASE_URL}/search?query=test&current_page=*)(!%20cn=*1226805346void)",
+        "url": BASE_URL + "/search?query=test&current_page=*)(!%20cn=*1226805346void)",
         "expected_status": 400,
         "description": "Tests LDAP injection prevention in current_page parameter (reported vulnerability)"
     },
     {
         "name": "LDAP Injection with uid attribute",
-        "url": f"{BASE_URL}/search?query=test&page_size=1)(uid=*",
+        "url": BASE_URL + "/search?query=test&page_size=1)(uid=*",
         "expected_status": 400,
         "description": "Tests LDAP injection prevention with uid attribute"
     },
     {
         "name": "LDAP Injection with objectClass",
-        "url": f"{BASE_URL}/search?query=test&department=1)(objectClass=*",
+        "url": BASE_URL + "/search?query=test&department=1)(objectClass=*",
         "expected_status": 400,
         "description": "Tests LDAP injection prevention with objectClass attribute"
     },
     {
         "name": "LDAP OR operator injection",
-        "url": f"{BASE_URL}/search?query=test||malicious&confidence_level=0.2",
+        "url": BASE_URL + "/search?query=test||malicious&confidence_level=0.2",
         "expected_status": 400,
         "description": "Tests LDAP OR operator injection prevention"
     },
     {
+        "name": "Path Manipulation - Tab Character",
+        "url": BASE_URL + "/search\tmalicious",
+        "expected_status": 400,
+        "description": "Tests tab character (0x09) in URL path"
+    },
+    {
+        "name": "Path Manipulation - Path Traversal",
+        "url": BASE_URL + "/search/../../../etc/passwd",
+        "expected_status": 400,
+        "description": "Tests basic path traversal attack"
+    },
+    {
+        "name": "Path Manipulation - HTTP Protocol Injection",
+        "url": BASE_URL + "/_next/static/chunks/main.js\tHTTP/1.1/../../",
+        "expected_status": 400,
+        "description": "Tests HTTP protocol injection (original vulnerability)"
+    },
+    {
         "name": "Valid request",
-        "url": f"{BASE_URL}/search?query=test&confidence_level=0.2&department=1",
+        "url": BASE_URL + "/search?query=test&confidence_level=0.2&department=1",
         "expected_status": 200,
         "description": "Tests that valid requests still work"
     }
@@ -93,8 +111,8 @@ def test_security_improvements():
     total_tests = len(TEST_CASES)
     
     for i, test_case in enumerate(TEST_CASES, 1):
-        print(f"Test {i}/{total_tests}: {test_case['name']}")
-        print(f"Description: {test_case['description']}")
+        print("Test {}/{}: {}".format(i, total_tests, test_case['name']))
+        print("Description: {}".format(test_case['description']))
         
         try:
             # Make request with suspicious User-Agent to test detection
@@ -105,18 +123,18 @@ def test_security_improvements():
             response = requests.get(test_case['url'], headers=headers, timeout=10)
             
             if response.status_code == test_case['expected_status']:
-                print(f"✅ PASSED - Status: {response.status_code}")
+                print("✅ PASSED - Status: {}".format(response.status_code))
                 passed_tests += 1
             else:
-                print(f"❌ FAILED - Expected: {test_case['expected_status']}, Got: {response.status_code}")
-                print(f"   Response: {response.text[:100]}...")
+                print("❌ FAILED - Expected: {}, Got: {}".format(test_case['expected_status'], response.status_code))
+                print("   Response: {}...".format(response.text[:100]))
                 
         except requests.exceptions.RequestException as e:
-            print(f"❌ ERROR - Request failed: {str(e)}")
+            print("❌ ERROR - Request failed: {}".format(str(e)))
         
         print("-" * 50)
     
-    print(f"\nSUMMARY: {passed_tests}/{total_tests} tests passed")
+    print("\nSUMMARY: {}/{} tests passed".format(passed_tests, total_tests))
     
     if passed_tests == total_tests:
         print("🎉 ALL SECURITY TESTS PASSED! The application is now secure.")
@@ -132,13 +150,13 @@ def test_rate_limiting():
     
     for i in range(5):
         try:
-            response = requests.get(f"{BASE_URL}/health", timeout=5)
-            print(f"Request {i+1}: Status {response.status_code}")
+            response = requests.get(BASE_URL + "/health", timeout=5)
+            print("Request {}: Status {}".format(i+1, response.status_code))
             if response.status_code == 429:
                 print("✅ Rate limiting is working!")
                 break
         except requests.exceptions.RequestException as e:
-            print(f"Request {i+1}: Error - {str(e)}")
+            print("Request {}: Error - {}".format(i+1, str(e)))
         
         time.sleep(0.1)  # Small delay between requests
 
@@ -147,7 +165,7 @@ def test_security_headers():
     print("\n=== SECURITY HEADERS TEST ===\n")
     
     try:
-        response = requests.get(f"{BASE_URL}/health", timeout=5)
+        response = requests.get(BASE_URL + "/health", timeout=5)
         
         security_headers = [
             'X-Content-Type-Options',
@@ -158,12 +176,12 @@ def test_security_headers():
         
         for header in security_headers:
             if header in response.headers:
-                print(f"✅ {header}: {response.headers[header]}")
+                print("✅ {}: {}".format(header, response.headers[header]))
             else:
-                print(f"❌ {header}: Missing")
+                print("❌ {}: Missing".format(header))
                 
     except requests.exceptions.RequestException as e:
-        print(f"❌ ERROR - Request failed: {str(e)}")
+        print("❌ ERROR - Request failed: {}".format(str(e)))
 
 if __name__ == "__main__":
     print("Starting security tests for the PolyU Patent Search API...")

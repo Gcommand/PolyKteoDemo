@@ -150,6 +150,31 @@ def security_middleware():
         if re.search(pattern, url_to_check, re.IGNORECASE):
             logger.warning(f"LDAP injection pattern detected from IP {ip_address}: {pattern} in URL {request.url}")
             return jsonify({"error": "Invalid request format"}), 400
+    
+    # Check for control characters in URL path (0x00-0x1f, 0x7f)
+    # These can be used for path manipulation and authentication bypass
+    url_path = request.path
+    for i, char in enumerate(url_path):
+        char_code = ord(char)
+        # Control characters: 0x00-0x1f (0-31) and 0x7f (127)
+        if char_code <= 0x1f or char_code == 0x7f:
+            logger.warning(f"Control character detected in URL path from IP {ip_address}: "
+                         f"character code 0x{char_code:02x} at position {i} in path '{url_path}'")
+            return jsonify({"error": "Invalid characters in URL path"}), 400
+    
+    # Check for common path traversal patterns that might use control characters
+    path_traversal_patterns = [
+        r'\.\./',        # Path traversal
+        r'\.\.\\',       # Path traversal (Windows)
+        r'%2e%2e/',      # URL encoded path traversal
+        r'%2e%2e%2f',    # URL encoded path traversal
+        r'HTTP/1\.[01]', # HTTP protocol in path (control char attack)
+    ]
+    
+    for pattern in path_traversal_patterns:
+        if re.search(pattern, url_path, re.IGNORECASE):
+            logger.warning(f"Path traversal pattern detected from IP {ip_address}: {pattern} in path {url_path}")
+            return jsonify({"error": "Invalid path format"}), 400
 
 @app.after_request
 def add_security_headers(response):

@@ -19,57 +19,57 @@ def test_ldap_injection_patterns():
     ldap_test_cases = [
         {
             "name": "Original Vulnerability - current_page parameter",
-            "url": f"{BASE_URL}/search?query=test&current_page=*)(!%20cn=*1226805346void)",
+            "url": BASE_URL + "/search?query=test&current_page=*)(!%20cn=*1226805346void)",
             "description": "Tests the exact LDAP injection pattern from the security report"
         },
         {
             "name": "LDAP Wildcard Filter Attack",
-            "url": f"{BASE_URL}/search?query=test&page_size=*)",
+            "url": BASE_URL + "/search?query=test&page_size=*)",
             "description": "Tests LDAP wildcard filter pattern *)"
         },
         {
             "name": "LDAP Negation Attack",
-            "url": f"{BASE_URL}/search?query=test&current_page=!(",
+            "url": BASE_URL + "/search?query=test&current_page=!(",
             "description": "Tests LDAP negation pattern !("
         },
         {
             "name": "LDAP Common Name (cn) Attack",
-            "url": f"{BASE_URL}/search?query=test&department=1)(cn=*",
+            "url": BASE_URL + "/search?query=test&department=1)(cn=*",
             "description": "Tests LDAP common name attribute injection"
         },
         {
             "name": "LDAP User ID (uid) Attack",
-            "url": f"{BASE_URL}/search?query=test&tech_sector_id=2)(uid=admin",
+            "url": BASE_URL + "/search?query=test&tech_sector_id=2)(uid=admin",
             "description": "Tests LDAP user ID attribute injection"
         },
         {
             "name": "LDAP Organizational Unit (ou) Attack",
-            "url": f"{BASE_URL}/search?query=test&assignee_id=3)(ou=*",
+            "url": BASE_URL + "/search?query=test&assignee_id=3)(ou=*",
             "description": "Tests LDAP organizational unit injection"
         },
         {
             "name": "LDAP Domain Component (dc) Attack",
-            "url": f"{BASE_URL}/search?query=test&confidence_level=0.2)(dc=example",
+            "url": BASE_URL + "/search?query=test&confidence_level=0.2)(dc=example",
             "description": "Tests LDAP domain component injection"
         },
         {
             "name": "LDAP ObjectClass Attack",
-            "url": f"{BASE_URL}/search?query=test&sorting_order=REL_DESC)(objectClass=*",
+            "url": BASE_URL + "/search?query=test&sorting_order=REL_DESC)(objectClass=*",
             "description": "Tests LDAP objectClass attribute injection"
         },
         {
             "name": "LDAP OR Operator Attack",
-            "url": f"{BASE_URL}/search?query=test||admin&confidence_level=0.2",
+            "url": BASE_URL + "/search?query=test||admin&confidence_level=0.2",
             "description": "Tests LDAP OR operator injection"
         },
         {
             "name": "LDAP AND Operator Attack",
-            "url": f"{BASE_URL}/search?query=test&&admin&confidence_level=0.2",
+            "url": BASE_URL + "/search?query=test&&admin&confidence_level=0.2",
             "description": "Tests LDAP AND operator injection"
         },
         {
             "name": "Complex LDAP Filter Attack",
-            "url": f"{BASE_URL}/search?query=test&current_page=1)(|(cn=*)(uid=admin))",
+            "url": BASE_URL + "/search?query=test&current_page=1)(|(cn=*)(uid=admin))",
             "description": "Tests complex LDAP filter injection"
         }
     ]
@@ -78,31 +78,31 @@ def test_ldap_injection_patterns():
     total_tests = len(ldap_test_cases)
     
     for i, test_case in enumerate(ldap_test_cases, 1):
-        print(f"Test {i}/{total_tests}: {test_case['name']}")
-        print(f"Description: {test_case['description']}")
-        print(f"URL: {test_case['url']}")
+        print("Test {}/{}: {}".format(i, total_tests, test_case['name']))
+        print("Description: {}".format(test_case['description']))
+        print("URL: {}".format(test_case['url']))
         
         try:
             response = requests.get(test_case['url'], timeout=10)
             
             if response.status_code == 400:
-                print(f"✅ PASSED - LDAP injection blocked (Status: {response.status_code})")
+                print("✅ PASSED - LDAP injection blocked (Status: {})".format(response.status_code))
                 try:
                     error_response = response.json()
-                    print(f"   Error message: {error_response.get('error', 'No error message')}")
+                    print("   Error message: {}".format(error_response.get('error', 'No error message')))
                 except:
-                    print(f"   Response: {response.text[:100]}...")
+                    print("   Response: {}...".format(response.text[:100]))
                 passed_tests += 1
             else:
-                print(f"❌ FAILED - Expected 400, got {response.status_code}")
-                print(f"   Response: {response.text[:200]}...")
+                print("❌ FAILED - Expected 400, got {}".format(response.status_code))
+                print("   Response: {}...".format(response.text[:200]))
                 
         except requests.exceptions.RequestException as e:
-            print(f"❌ ERROR - Request failed: {str(e)}")
+            print("❌ ERROR - Request failed: {}".format(str(e)))
         
         print("-" * 60)
     
-    print(f"\nSUMMARY: {passed_tests}/{total_tests} LDAP injection tests passed")
+    print("\nSUMMARY: {}/{} LDAP injection tests passed".format(passed_tests, total_tests))
     
     if passed_tests == total_tests:
         print("🎉 ALL LDAP INJECTION TESTS PASSED! The application is secure against LDAP injection.")
@@ -115,31 +115,31 @@ def test_payloads_from_report():
     
     # Test payload 1 from the report: *)(uid=*
     print("Testing Payload 1: *)(uid=*")
-    payload1_url = f"{BASE_URL}/search?query=test&current_page=*)(uid=*"
+    payload1_url = BASE_URL + "/search?query=test&current_page=*)(uid=*"
     
     try:
         response = requests.get(payload1_url, timeout=10)
-        print(f"Payload 1 - Status: {response.status_code}")
+        print("Payload 1 - Status: {}".format(response.status_code))
         if response.status_code == 400:
             print("✅ Payload 1 BLOCKED successfully")
         else:
             print("❌ Payload 1 NOT BLOCKED")
     except Exception as e:
-        print(f"❌ Payload 1 test failed: {str(e)}")
+        print("❌ Payload 1 test failed: {}".format(str(e)))
     
     # Test payload 2 from the report: somevalue)(uid=someothervalue
     print("\nTesting Payload 2: somevalue)(uid=someothervalue")
-    payload2_url = f"{BASE_URL}/search?query=test&current_page=somevalue)(uid=someothervalue"
+    payload2_url = BASE_URL + "/search?query=test&current_page=somevalue)(uid=someothervalue"
     
     try:
         response = requests.get(payload2_url, timeout=10)
-        print(f"Payload 2 - Status: {response.status_code}")
+        print("Payload 2 - Status: {}".format(response.status_code))
         if response.status_code == 400:
             print("✅ Payload 2 BLOCKED successfully")
         else:
             print("❌ Payload 2 NOT BLOCKED")
     except Exception as e:
-        print(f"❌ Payload 2 test failed: {str(e)}")
+        print("❌ Payload 2 test failed: {}".format(str(e)))
 
 def test_valid_requests():
     """Test that valid requests still work after implementing LDAP injection protection."""
