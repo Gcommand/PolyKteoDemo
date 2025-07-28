@@ -17,7 +17,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def regenerate_all_embeddings(dry_run=False, batch_size=10):
+async def regenerate_all_embeddings(dry_run=False, batch_size=100):
     """
     Regenerate embeddings for all patents with ai_summary content.
     
@@ -165,7 +165,7 @@ async def main():
     
     # First, run a dry run to see what would be updated
     logger.info("Phase 1: Dry run to analyze current state")
-    updated_count, errors = await regenerate_all_embeddings(dry_run=False, batch_size=5)
+    updated_count, errors = await regenerate_all_embeddings(dry_run=False, batch_size=100)
     
     if updated_count == 0:
         logger.info("✅ All embeddings appear to be up to date!")
@@ -180,7 +180,7 @@ async def main():
     import os
     if os.getenv('LIVE_UPDATE', '').lower() == 'true':
         logger.info("\n🔥 LIVE UPDATE MODE - Proceeding with actual updates...")
-        await regenerate_all_embeddings(dry_run=False, batch_size=5)
+        await regenerate_all_embeddings(dry_run=False, batch_size=100)
         
         # Test the results
         await test_sample_after_update()
