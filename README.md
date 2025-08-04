@@ -23,10 +23,10 @@ The PolyU KTEO system is designed to help researchers, administrators, and stake
 - **Metadata preservation** with JSON support
 
 ### 🤖 AI Integration
-- **Pydantic AI expert** for intelligent patent analysis
+- **Vector-based semantic search** with OpenAI embeddings
 - **Automatic embedding generation** for new patent content
-- **Language-aware summaries** based on query language
-- **Conversation history** for interactive sessions
+- **Language-aware responses** based on query language
+- **Direct OpenAI API integration** for embedding generation
 
 ### 🔄 Data Processing
 - **Migration scripts** for data normalization and cleanup
@@ -140,6 +140,9 @@ python regenerate_embeddings.py
 
 # Debug similarity calculations
 python debug_similarity.py
+
+# Check embedding content
+python check_embedding_content.py
 ```
 
 ## 📡 API Endpoints
@@ -207,8 +210,7 @@ RATE_LIMIT_WINDOW = 60     # Window duration (seconds)
 PolyKteoDemo/
 ├── 📄 app.py                     # Main Flask API server
 ├── 🗂️ src/
-│   ├── postgres_embedding.py     # Database models & embedding functions
-│   └── pydantic_ai_expert.py     # AI agent for patent analysis
+│   └── postgres_embedding.py     # Database models & embedding functions
 ├── 🗂️ migrations/
 │   ├── migrate_tech_sectors.py   # Tech sector data migration
 │   ├── migrate_department_*.sql  # Department normalization
@@ -216,7 +218,7 @@ PolyKteoDemo/
 ├── 🗂️ n8n-version/
 │   └── code/                     # JavaScript processing modules
 ├── 🗂️ studio-integration-version/
-│   └── pydantic_ai_expert_endpoint.py # Production API endpoint
+│   └── pydantic_ai_expert_endpoint.py # Legacy integration files
 ├── 🗂️ swagger/
 │   └── PolyU_BN_API.yaml         # API documentation
 ├── 🗂️ tests/
