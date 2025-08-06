@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Regenerate all patent embeddings to fix the low similarity issue.
+Regenerate embeddings for tech patents (is_tech=False) to fix the low similarity issue.
 This script will:
 1. Backup current embeddings
-2. Regenerate embeddings from current ai_summary content
+2. Regenerate embeddings from current ai_summary content for tech patents only
 3. Validate the new embeddings
 """
 
@@ -32,13 +32,14 @@ async def regenerate_all_embeddings(dry_run=False, batch_size=100):
     # Get all patents that have ai_summary but need embedding updates
     patents = session.query(PatentsList).filter(
         PatentsList.ai_summary.isnot(None),
-        PatentsList.ai_summary != ''
+        PatentsList.ai_summary != '',
+        PatentsList.is_tech == False  # Only process tech patents
     ).all()
     
-    logger.info(f"Found {len(patents)} patents with ai_summary content")
+    logger.info(f"Found {len(patents)} tech patents (is_tech=False) with ai_summary content")
     
     if not patents:
-        logger.warning("No patents found with ai_summary content!")
+        logger.warning("No tech patents found with ai_summary content!")
         return
     
     # Process in batches
@@ -134,7 +135,8 @@ async def test_sample_after_update():
     # Get a few patents to test
     test_patents = session.query(PatentsList).filter(
         PatentsList.embedding.isnot(None),
-        PatentsList.ai_summary.isnot(None)
+        PatentsList.ai_summary.isnot(None),
+        PatentsList.is_tech == False  # Only test tech patents
     ).limit(3).all()
     
     for patent in test_patents:
