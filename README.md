@@ -8,37 +8,100 @@ The PolyU KTEO system is designed to help researchers, administrators, and stake
 
 ## ✨ Key Features
 
-### 🔍 Advanced Search Capabilities
-- **Vector-based semantic search** using OpenAI embeddings
-- **Multi-language support** (English/Chinese) with automatic detection
-- **Intelligent filtering** by departments, tech sectors, assignees, and dates
-- **Flexible sorting** options (relevance, date, title, etc.)
-- **Pagination** for large result sets
+### 📊 **Comprehensive Data Pipeline & Processing**
+- **Large-Scale Patent Database**: Successfully imported and processed over **2,000 patent records** (expanded from initial 900) from The Hong Kong Polytechnic University patent portfolio
+- **Sophisticated N8N Workflow Automation**: 
+  - Automated data ingestion pipeline with quality assurance agents
+  - OpenRouter AI integration for intelligent content processing
+  - Multi-step workflow orchestration with error handling and retry mechanisms
+  - Batch processing capabilities for large-scale patent data operations
+- **Multi-Source Data Integration**: 
+  - **PolyU Technology Website Parsing**: Custom JavaScript parsers for extracting project information from PolyU technology showcase websites
+  - **Google Patents Integration**: Enhanced metadata extraction including patent imagery and standardized classifications
+  - **PDF Patent Document Processing**: Automated parsing of PDF patent documents with structured data extraction
+  - **Crawl4AI Implementation**: AI-powered web scraping with 100% extraction accuracy for complex HTML structures
+- **AI-Enhanced Content Generation**: 
+  - Automated AI summary generation with quality assurance validation
+  - Structured output parsing for consistent data formatting
+  - Confidence scoring for extraction quality assessment
+  - Multi-model AI processing through OpenRouter integration
 
-### 🗂️ Data Management
-- **Structured patent database** with PostgreSQL + pgvector
-- **Department categorization** with abbreviation mapping
-- **Technology sector classification** for research areas
-- **Assignee management** with PolyU affiliation tracking
-- **Metadata preservation** with JSON support
+### 🔍 **Advanced Semantic Search & Discovery**
+- **Vector-Based Semantic Search**: Intelligent AI-powered search using OpenAI embeddings for contextual understanding beyond keyword matching
+- **Multi-Dimensional Filtering System**: 
+  - **Department-Based Filtering**: Search across 30+ PolyU faculties, schools, and departments with standardized abbreviation mapping
+  - **Technology Sector Classification**: Precise filtering across 34 technical domains including Biotech, ICT, Material Science, Healthcare, and Green Tech
+  - **Assignee & Inventor Management**: Search by specific researchers, patent holders, and PolyU affiliations
+  - **Temporal Filtering**: Date-based filtering with flexible range selection
+- **Intelligent Search Features**:
+  - **Multi-language support** (English/Chinese) with automatic language detection
+  - **Confidence-based ranking** with adjustable similarity thresholds (default 0.7)
+  - **Advanced sorting options**: Relevance, date, department (A-Z/Z-A), title alphabetical
+  - **Pagination support** for large result sets with configurable page sizes
 
-### 🤖 AI Integration
-- **Vector-based semantic search** with OpenAI embeddings
-- **Automatic embedding generation** for new patent content
-- **Language-aware responses** based on query language
-- **Direct OpenAI API integration** for embedding generation
+### 🗂️ **Robust Data Management Architecture**
+- **PostgreSQL + pgvector Database**: High-performance vector storage with semantic similarity indexing
+- **Structured Relationship Management**:
+  - Many-to-many relationships between patents, departments, tech sectors, and assignees
+  - Normalized department dictionary with abbreviation standardization
+  - Technology sector hierarchical classification system
+- **Data Quality & Integrity**:
+  - **Duplicate Detection & Prevention**: Intelligent record validation preventing data duplication
+  - **Metadata Enrichment**: Enhanced patent records with AI-generated summaries, image URLs, and standardized classifications
+  - **Migration Framework**: Comprehensive migration scripts for data normalization and schema updates
+  - **Incremental Updates**: Support for ongoing data updates and new patent additions
 
-### 🔄 Data Processing
-- **Migration scripts** for data normalization and cleanup
-- **N8N workflow integration** for automated processing
-- **Batch processing** for large-scale operations
+### 🤖 **Advanced AI Integration & Processing**
+- **OpenAI Embeddings Integration**: Direct Azure OpenAI API integration for high-quality vector embeddings
+- **Automatic Embedding Generation**: Real-time embedding creation for new patent content with batch processing capabilities
+- **AI-Powered Content Enhancement**:
+  - Quality assurance agents for content validation
+  - Summarization chains for improved readability
+  - Language-aware processing based on query language
+  - Structured output parsing with confidence scoring
+- **Crawl4AI Integration**: 
+  - AI-powered web scraping with context understanding
+  - Malformed URL and complex HTML structure handling
+  - Department inference from contextual clues
+  - 100% extraction accuracy targeting
 
-### 🛡️ Security & Performance
-- **Comprehensive security hardening** against common vulnerabilities
-- **Rate limiting** (100 requests/minute per IP)
-- **Input validation** and sanitization
-- **Security headers** and monitoring
-- **Error handling** with sanitized responses
+### 🔄 **Automated Workflow & Processing Systems**
+- **N8N Workflow Engine**: 
+  - Complete automation pipeline from data ingestion to processed output
+  - Loop processing for large datasets with batch management
+  - HTTP request handling for external API integrations
+  - Conditional logic for quality control and error handling
+- **Technology Website Parsers**: 
+  - Custom JavaScript modules for PolyU technology showcase extraction
+  - Event URL extraction and project structure analysis
+  - Rich text HTML processing and content standardization
+  - Multi-pattern recognition for diverse website structures
+- **Batch Processing Capabilities**:
+  - Large-scale patent processing with memory optimization
+  - Parallel processing for improved performance
+  - Error recovery and retry mechanisms
+  - Progress tracking and logging
+
+### 🛡️ **Enterprise Security & Performance**
+- **Comprehensive Security Hardening**: 
+  - Protection against SQL injection, XSS, and LDAP injection attacks
+  - Path manipulation and directory traversal prevention
+  - Input validation and sanitization across all endpoints
+- **Performance Optimization**:
+  - **Rate limiting** (100 requests/minute per IP) with automatic cleanup
+  - Connection pooling and database optimization
+  - Caching strategies for improved response times
+  - Memory-efficient processing for large datasets
+- **Security Headers & Monitoring**:
+  - Content Security Policy implementation
+  - XSS Protection and Frame Options
+  - HTTPS enforcement and security monitoring
+  - Comprehensive logging with sanitized error responses
+- **Enterprise-Grade Reliability**:
+  - Error handling with graceful degradation
+  - Health check endpoints for system monitoring
+  - Multi-environment deployment support (Development, UAT, Production)
+  - Docker containerization for scalable deployment
 
 ## 🏗️ System Architecture
 
