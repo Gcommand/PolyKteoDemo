@@ -19,7 +19,6 @@ The PolyU KTEO system is designed to help researchers, administrators, and stake
   - **PolyU Technology Website Parsing**: Custom JavaScript parsers for extracting project information from PolyU technology showcase websites
   - **Google Patents Integration**: Enhanced metadata extraction including patent imagery and standardized classifications
   - **PDF Patent Document Processing**: Automated parsing of PDF patent documents with structured data extraction
-  - **Crawl4AI Implementation**: AI-powered web scraping with 100% extraction accuracy for complex HTML structures
 - **AI-Enhanced Content Generation**: 
   - Automated AI summary generation with quality assurance validation
   - Structured output parsing for consistent data formatting
@@ -59,11 +58,6 @@ The PolyU KTEO system is designed to help researchers, administrators, and stake
   - Summarization chains for improved readability
   - Language-aware processing based on query language
   - Structured output parsing with confidence scoring
-- **Crawl4AI Integration**: 
-  - AI-powered web scraping with context understanding
-  - Malformed URL and complex HTML structure handling
-  - Department inference from contextual clues
-  - 100% extraction accuracy targeting
 
 ### 🔄 **Automated Workflow & Processing Systems**
 - **N8N Workflow Engine**: 
