@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from typing import List, Dict, Any
-from sqlalchemy import create_engine, Column, Integer, String, Float, Text, TIMESTAMP, JSON, Boolean, ForeignKey, Table
+from sqlalchemy import create_engine, Column, Integer, String, Float, Text, TIMESTAMP, JSON, Boolean, ForeignKey, Table, Date
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from pgvector.sqlalchemy import Vector
@@ -84,6 +84,7 @@ class PatentsList(Base):
     is_tech = Column(Boolean, default=False)
     ai_short_summary = Column(Text)
     is_cn_applied = Column(Boolean, nullable=False, default=False)
+    file_date = Column(Date)
     departments = relationship("PatentDepartments", back_populates="patent")
     assignees = relationship("PatentAssignees", back_populates="patent")
     tech_sectors = relationship("TechSectors", secondary=patent_tech_sectors_table, back_populates="patents", lazy="joined")

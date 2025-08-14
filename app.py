@@ -500,7 +500,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Response model
 class PatentResponse:
-    def __init__(self, sys_id, official_title, tech_sector=None, inventor=None, department=None, country_region=None, google_patent_link=None, ai_summary=None, similarity=None, is_tech=None, ai_short_summary=None):
+    def __init__(self, sys_id, official_title, tech_sector=None, inventor=None, department=None, country_region=None, google_patent_link=None, ai_summary=None, similarity=None, is_tech=None, ai_short_summary=None, file_date=None):
         self.sys_id = sys_id
         self.official_title = official_title
         self.tech_sector = tech_sector
@@ -512,6 +512,7 @@ class PatentResponse:
         self.similarity = similarity
         self.is_tech = is_tech
         self.ai_short_summary = ai_short_summary
+        self.file_date = file_date
 
 def apply_sorting(query, sort_order, similarity_score, department_ids=None, assignee_ids=None, tech_sector_ids=None, is_cn_applied=None, confidence_level=None, query_embedding=None):
     """Apply sorting to the query based on the sort order.
@@ -790,7 +791,7 @@ def apply_sorting(query, sort_order, similarity_score, department_ids=None, assi
             print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
         
         print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
-        return main_query.order_by(desc(PatentsList.created_dt))
+        return main_query.order_by(desc(PatentsList.file_date).nulls_last())
     elif sort_order == 'DATE_ASC':
         print("DEBUG: Applying DATE_ASC sorting (date ascending)")
         main_query = (
@@ -829,7 +830,7 @@ def apply_sorting(query, sort_order, similarity_score, department_ids=None, assi
             print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
         
         print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
-        return main_query.order_by(PatentsList.created_dt)
+        return main_query.order_by(PatentsList.file_date.nulls_last())
     else:
         # Default to unsorted results
         print(f"DEBUG: Unknown sort_order '{sort_order}', using default unsorted")
@@ -891,8 +892,8 @@ def search_patents():
         - REL_ASC: Sort by Relevance: Ascending (only available with query)
         - FSD_ASC: Sort by Faculties, Schools & Departments: A-Z
         - FSD_DESC: Sort by Faculties, Schools & Departments: Z-A
-        - DATE_DESC: Sort by Latest date: Latest
-        - DATE_ASC: Sort by Latest date: Oldest
+        - DATE_DESC: Sort by Latest date: Latest (file_date)
+        - DATE_ASC: Sort by Latest date: Oldest (file_date)
     - current_page: Current page number (default: 1)
     - page_size: Number of results per page (default: 12)
     - department: Department ID(s) to filter results (optional, can be multiple values)
@@ -1211,13 +1212,13 @@ def search_patents():
             )
         elif sorting_order == 'DATE_DESC':
             print("DEBUG: Applying DATE_DESC sorting to existing base_query")
-            base_query = base_query.order_by(desc(PatentsList.created_dt))
+            base_query = base_query.order_by(desc(PatentsList.file_date).nulls_last())
         elif sorting_order == 'DATE_ASC':
             print("DEBUG: Applying DATE_ASC sorting to existing base_query")
-            base_query = base_query.order_by(PatentsList.created_dt)
+            base_query = base_query.order_by(PatentsList.file_date.nulls_last())
         else:
             print(f"DEBUG: Unknown sort_order '{sorting_order}', using default DATE_DESC")
-            base_query = base_query.order_by(desc(PatentsList.created_dt))
+            base_query = base_query.order_by(desc(PatentsList.file_date).nulls_last())
         
         print("DEBUG: Sorting applied to existing base_query")
 
@@ -1298,6 +1299,7 @@ def search_patents():
                 "is_tech": patent.is_tech,
                 "is_cn_applied": patent.is_cn_applied,
                 "ai_short_summary": chinese_short_summary,
+                "file_date": patent.file_date.isoformat() if patent.file_date else None,
                 "query_language": query_lang,
                 "search_mode": "query" if query else "browse"
             }

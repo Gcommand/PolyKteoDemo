@@ -214,7 +214,7 @@ def test_sorting_with_real_data(caplog):
     # Verify date sorting
     if len(date_desc_results) > 1:
         # Check that results are sorted by date in descending order
-        dates = [r[0].created_dt for r in date_desc_results]  # Get created_dt from PatentsList instance
+        dates = [r[0].file_date for r in date_desc_results]  # Get file_date from PatentsList instance
         assert all(dates[i] >= dates[i+1] for i in range(len(dates)-1)), \
             "Results should be sorted by date in descending order"
         
@@ -233,7 +233,7 @@ def test_sorting_with_real_data(caplog):
     # Verify date sorting
     if len(date_asc_results) > 1:
         # Check that results are sorted by date in ascending order
-        dates = [r[0].created_dt for r in date_asc_results]  # Get created_dt from PatentsList instance
+        dates = [r[0].file_date for r in date_asc_results]  # Get file_date from PatentsList instance
         assert all(dates[i] <= dates[i+1] for i in range(len(dates)-1)), \
             "Results should be sorted by date in ascending order"
         
