@@ -791,7 +791,7 @@ def apply_sorting(query, sort_order, similarity_score, department_ids=None, assi
             print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
         
         print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
-        return main_query.order_by(desc(PatentsList.file_date).nulls_last())
+        return main_query.order_by(desc(PatentsList.file_date).nulls_last(), PatentsList.sys_id)
     elif sort_order == 'DATE_ASC':
         print("DEBUG: Applying DATE_ASC sorting (date ascending)")
         main_query = (
@@ -830,7 +830,7 @@ def apply_sorting(query, sort_order, similarity_score, department_ids=None, assi
             print(f"DEBUG: Applied is_cn_applied filter: {is_cn_applied}")
         
         print(f"DEBUG: Final query filters applied. Returning query with {sort_order} sorting.")
-        return main_query.order_by(PatentsList.file_date.nulls_last())
+        return main_query.order_by(PatentsList.file_date.nulls_last(), PatentsList.sys_id)
     else:
         # Default to unsorted results
         print(f"DEBUG: Unknown sort_order '{sort_order}', using default unsorted")
@@ -1212,13 +1212,13 @@ def search_patents():
             )
         elif sorting_order == 'DATE_DESC':
             print("DEBUG: Applying DATE_DESC sorting to existing base_query")
-            base_query = base_query.order_by(desc(PatentsList.file_date).nulls_last())
+            base_query = base_query.order_by(desc(PatentsList.file_date).nulls_last(), PatentsList.sys_id)
         elif sorting_order == 'DATE_ASC':
             print("DEBUG: Applying DATE_ASC sorting to existing base_query")
-            base_query = base_query.order_by(PatentsList.file_date.nulls_last())
+            base_query = base_query.order_by(PatentsList.file_date.nulls_last(), PatentsList.sys_id)
         else:
             print(f"DEBUG: Unknown sort_order '{sorting_order}', using default DATE_DESC")
-            base_query = base_query.order_by(desc(PatentsList.file_date).nulls_last())
+            base_query = base_query.order_by(desc(PatentsList.file_date).nulls_last(), PatentsList.sys_id)
         
         print("DEBUG: Sorting applied to existing base_query")
 

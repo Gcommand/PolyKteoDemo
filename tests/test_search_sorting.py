@@ -215,8 +215,12 @@ def test_sorting_with_real_data(caplog):
     if len(date_desc_results) > 1:
         # Check that results are sorted by date in descending order
         dates = [r[0].file_date for r in date_desc_results]  # Get file_date from PatentsList instance
-        assert all(dates[i] >= dates[i+1] for i in range(len(dates)-1)), \
-            "Results should be sorted by date in descending order"
+        
+        # Filter out None values for comparison
+        valid_dates = [date for date in dates if date is not None]
+        if len(valid_dates) > 1:
+            assert all(valid_dates[i] >= valid_dates[i+1] for i in range(len(valid_dates)-1)), \
+                "Results should be sorted by date in descending order"
         
         # Verify that NULL dates are at the end
         if None in dates:
@@ -234,8 +238,12 @@ def test_sorting_with_real_data(caplog):
     if len(date_asc_results) > 1:
         # Check that results are sorted by date in ascending order
         dates = [r[0].file_date for r in date_asc_results]  # Get file_date from PatentsList instance
-        assert all(dates[i] <= dates[i+1] for i in range(len(dates)-1)), \
-            "Results should be sorted by date in ascending order"
+        
+        # Filter out None values for comparison
+        valid_dates = [date for date in dates if date is not None]
+        if len(valid_dates) > 1:
+            assert all(valid_dates[i] <= valid_dates[i+1] for i in range(len(valid_dates)-1)), \
+                "Results should be sorted by date in ascending order"
         
         # Verify that NULL dates are at the end
         if None in dates:
