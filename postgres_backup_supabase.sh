@@ -16,10 +16,15 @@ RETENTION_DAYS=30
 LOCAL_HOST="localhost"
 LOCAL_PORT="5432"
 LOCAL_USER="postgres"
+LOCAL_PASSWORD="password"
 LOCAL_DB="postgres"
 
 # Supabase connection details
-SUPABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+SUPABASE_PASSWORD="password"
+SUPABASE_URL="postgresql://postgres:${SUPABASE_PASSWORD}@127.0.0.1:54322/postgres"
+
+# Set environment variables for password-less connections
+export PGPASSWORD="$LOCAL_PASSWORD"
 
 # Create directories if they don't exist
 mkdir -p "$BACKUP_DIR"

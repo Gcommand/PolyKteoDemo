@@ -20,10 +20,14 @@ LOCAL_PASSWORD="password"
 LOCAL_DB="postgres"
 
 # Supabase connection details
-SUPABASE_PASSWORD="password"
-SUPABASE_URL="postgresql://postgres:${SUPABASE_PASSWORD}@127.0.0.1:54322/postgres"
+# Local Supabase password (default "password" unless overridden in ENV_FILE)
+SUPABASE_LOCAL_PASSWORD=postgres
+SUPABASE_LOCAL_URL="postgresql://postgres:${SUPABASE_LOCAL_PASSWORD}@127.0.0.1:54322/postgres"
+# Optional: set to your Supabase Cloud DSN (full URL), e.g.,
+# postgresql://postgres:YOUR_URL_ENCODED_PASSWORD@db.your-project.supabase.co:5432/postgres
+SUPABASE_CLOUD_URL="${SUPABASE_CLOUD_URL:-}"
 
-# Set environment variables for password-less connections
+# Set environment variables for password-less connections (for local pg_dump)
 export PGPASSWORD="$LOCAL_PASSWORD"
 
 # Create directories if they don't exist
@@ -40,9 +44,11 @@ error_exit() {
     exit 1
 }
 
-# Function to clear Supabase database
-clear_supabase_database() {
-    log "Clearing Supabase database..."
+# Function to clear a target database (by URL)
+clear_database() {
+    local target_url="$1"
+    local target_label="${2:-Target}"
+    log "Clearing ${target_label} database..."
 
     # SQL commands to drop all tables, sequences, and constraints
     local CLEAR_SQL="
@@ -73,11 +79,22 @@ clear_supabase_database() {
     "
 
     # Execute the clear commands
-    if ! echo "$CLEAR_SQL" | psql "$SUPABASE_URL" -q; then
-        error_exit "Failed to clear Supabase database"
+    if ! echo "$CLEAR_SQL" | psql "$target_url" -q; then
+        error_exit "Failed to clear ${target_label} database"
     fi
 
-    log "Supabase database cleared successfully"
+    log "${target_label} database cleared successfully"
+}
+
+# Function to restore the backup into a target database (by URL)
+restore_to_database() {
+    local target_url="$1"
+    local target_label="${2:-Target}"
+    log "Restoring backup to ${target_label}..."
+    if ! psql "$target_url" -f "$BACKUP_FILE"; then
+        error_exit "Failed to restore backup to ${target_label}"
+    fi
+    log "Backup restored to ${target_label} successfully"
 }
 
 # Cleanup old backups
@@ -110,16 +127,17 @@ perform_backup() {
     local backup_size=$(du -h "$BACKUP_FILE" | cut -f1)
     log "Backup created successfully: $BACKUP_FILE (Size: $backup_size)"
 
-    # Step 2: Clear Supabase database
-    clear_supabase_database
+    # Step 2: Clear and restore to local Supabase
+    clear_database "$SUPABASE_LOCAL_URL" "Supabase Local"
+    restore_to_database "$SUPABASE_LOCAL_URL" "Supabase Local"
 
-    # Step 3: Restore to Supabase
-    log "Restoring backup to Supabase..."
-    if ! psql "$SUPABASE_URL" -f "$BACKUP_FILE"; then
-        error_exit "Failed to restore backup to Supabase"
+    # Step 3: If configured, also clear and restore to Supabase Cloud
+    if [ -n "$SUPABASE_CLOUD_URL" ]; then
+        clear_database "$SUPABASE_CLOUD_URL" "Supabase Cloud"
+        restore_to_database "$SUPABASE_CLOUD_URL" "Supabase Cloud"
+    else
+        log "Supabase Cloud URL not set; skipping cloud restore"
     fi
-
-    log "Backup restored to Supabase successfully"
 }
 
 # Main execution
